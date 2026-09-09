@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<restrictions xmlns:android="http://schemas.android.com/apk/res/android">
+    <restriction
+        android:key="tablet_serial"
+        android:title="@string/usage_audit_restriction_serial_title"
+        android:description="@string/usage_audit_restriction_serial_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+</restrictions>

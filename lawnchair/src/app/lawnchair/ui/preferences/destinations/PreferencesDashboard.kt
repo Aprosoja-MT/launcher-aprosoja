@@ -72,6 +72,7 @@ import app.lawnchair.ui.preferences.navigation.PreferenceRootRoute
 import app.lawnchair.ui.preferences.navigation.Quickstep
 import app.lawnchair.ui.preferences.navigation.Search
 import app.lawnchair.ui.preferences.navigation.Smartspace
+import app.lawnchair.ui.preferences.navigation.UsageAudit
 import app.lawnchair.ui.theme.isSelectedThemeDark
 import app.lawnchair.ui.theme.preferenceGroupColor
 import app.lawnchair.ui.util.addIf
@@ -194,6 +195,16 @@ fun PreferencesDashboard(
                 onNavigate = { onNavigate(About) },
                 isSelected = currentRoute is About,
             )
+
+            if (BuildConfig.DEBUG) {
+                PreferenceCategory(
+                    label = stringResource(R.string.usage_audit_label),
+                    description = stringResource(R.string.usage_audit_description),
+                    iconResource = R.drawable.ic_file_text,
+                    onNavigate = { onNavigate(UsageAudit) },
+                    isSelected = currentRoute is UsageAudit,
+                )
+            }
         }
     }
 }

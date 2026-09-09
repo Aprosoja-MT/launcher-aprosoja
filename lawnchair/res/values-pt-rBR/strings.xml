@@ -151,6 +151,27 @@
     <string name="quickstep_label">Janela de aplicativos recentes</string>
     <string name="quickstep_description">Botão \"Limpar Tudo\", raio de canto</string>
     <string name="about_label">Sobre</string>
+    <string name="usage_audit_label">Auditoria de uso</string>
+    <string name="usage_audit_description">Tempo de tela e apps vigiados</string>
+    <string name="usage_audit_serial">Número de série</string>
+    <string name="usage_audit_serial_missing">Serial indisponível. A coleta está pausada.</string>
+    <string name="usage_audit_serial_value">%1$s · %2$s</string>
+    <string name="usage_audit_serial_source_knox">Knox Manage</string>
+    <string name="usage_audit_serial_source_build">Build.getSerial()</string>
+    <string name="usage_audit_serial_source_debug">Override de debug</string>
+    <string name="usage_audit_serial_override">Serial de debug</string>
+    <string name="usage_audit_serial_override_empty">Não definido</string>
+    <string name="usage_audit_restriction_serial_title">Número de série</string>
+    <string name="usage_audit_restriction_serial_description" formatted="false">Lookup do Knox Manage: ${DeviceSerialNumber}</string>
+    <string name="usage_audit_model">Modelo</string>
+    <string name="usage_audit_usage_permission">Acesso a uso</string>
+    <string name="usage_audit_usage_permission_granted">Concedido</string>
+    <string name="usage_audit_usage_permission_denied">Não concedido. Abra as configurações para permitir o acesso.</string>
+    <string name="usage_audit_open_usage_settings">Abrir acesso a uso</string>
+    <string name="usage_audit_screen_time_today">Tempo de tela hoje</string>
+    <string name="usage_audit_collect_now">Coletar agora</string>
+    <string name="usage_audit_watched_apps">Apps vigiados</string>
+    <string name="usage_audit_app_stats">%1$d aberturas · %2$s</string>
     <string name="app_info_drop_target_label">Informações do app</string>
     <string name="debug_restart_launcher">Reiniciar o Apro Launcher</string>
     <string name="experimental_features_label">Recursos experimentais</string>

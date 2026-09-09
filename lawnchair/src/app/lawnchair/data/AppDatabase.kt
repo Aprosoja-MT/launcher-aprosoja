@@ -12,23 +12,42 @@ import app.lawnchair.data.folder.FolderItemEntity
 import app.lawnchair.data.folder.service.FolderDao
 import app.lawnchair.data.iconoverride.IconOverride
 import app.lawnchair.data.iconoverride.IconOverrideDao
+import app.lawnchair.data.usage.DailyAppUsage
+import app.lawnchair.data.usage.DailyDeviceUsage
+import app.lawnchair.data.usage.DeviceIdentity
+import app.lawnchair.data.usage.UsageDao
+import app.lawnchair.data.usage.WatchedApp
 import app.lawnchair.data.wallpaper.Wallpaper
 import app.lawnchair.data.wallpaper.service.WallpaperDao
 import app.lawnchair.util.MainThreadInitializedObject
 import kotlinx.coroutines.runBlocking
 
-@Database(entities = [IconOverride::class, Wallpaper::class, FolderInfoEntity::class, FolderItemEntity::class], version = 3)
+@Database(
+    entities = [
+        IconOverride::class,
+        Wallpaper::class,
+        FolderInfoEntity::class,
+        FolderItemEntity::class,
+        DeviceIdentity::class,
+        WatchedApp::class,
+        DailyDeviceUsage::class,
+        DailyAppUsage::class,
+    ],
+    version = 4,
+)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun iconOverrideDao(): IconOverrideDao
     abstract fun wallpaperDao(): WallpaperDao
     abstract fun folderDao(): FolderDao
+    abstract fun usageDao(): UsageDao
 
     suspend fun checkpoint() {
         iconOverrideDao().checkpoint(SimpleSQLiteQuery("pragma wal_checkpoint(full)"))
         wallpaperDao().checkpoint(SimpleSQLiteQuery("pragma wal_checkpoint(full)"))
         folderDao().checkpoint(SimpleSQLiteQuery("pragma wal_checkpoint(full)"))
+        usageDao().checkpoint(SimpleSQLiteQuery("pragma wal_checkpoint(full)"))
     }
 
     fun checkpointSync() {
@@ -89,12 +108,61 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `device_identity` (
+                        `id` INTEGER NOT NULL,
+                        `tabletId` TEXT NOT NULL,
+                        `model` TEXT NOT NULL,
+                        `registeredAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `watched_apps` (
+                        `packageName` TEXT NOT NULL,
+                        `label` TEXT NOT NULL,
+                        `enabled` INTEGER NOT NULL,
+                        PRIMARY KEY(`packageName`)
+                    )
+                    """.trimIndent(),
+                )
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `daily_device_usage` (
+                        `date` TEXT NOT NULL,
+                        `screenOnMs` INTEGER NOT NULL,
+                        PRIMARY KEY(`date`)
+                    )
+                    """.trimIndent(),
+                )
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `daily_app_usage` (
+                        `date` TEXT NOT NULL,
+                        `packageName` TEXT NOT NULL,
+                        `openCount` INTEGER NOT NULL,
+                        `foregroundMs` INTEGER NOT NULL,
+                        PRIMARY KEY(`date`, `packageName`)
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
         val INSTANCE = MainThreadInitializedObject { context ->
             Room.databaseBuilder(
                 context,
                 AppDatabase::class.java,
                 "preferences",
-            ).addMigrations(MIGRATION_1_3).addMigrations(MIGRATION_2_3).build()
+            ).addMigrations(MIGRATION_1_3)
+                .addMigrations(MIGRATION_2_3)
+                .addMigrations(MIGRATION_3_4)
+                .build()
         }
     }
 }

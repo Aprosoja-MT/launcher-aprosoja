@@ -194,6 +194,27 @@
     <string name="quickstep_description">Clear All button, corner radius</string>
 
     <string name="about_label">About</string>
+    <string name="usage_audit_label">Usage audit</string>
+    <string name="usage_audit_description">Screen time and watched apps</string>
+    <string name="usage_audit_serial">Device serial</string>
+    <string name="usage_audit_serial_missing">Serial unavailable. Collection is paused.</string>
+    <string name="usage_audit_serial_value">%1$s · %2$s</string>
+    <string name="usage_audit_serial_source_knox">Knox Manage</string>
+    <string name="usage_audit_serial_source_build">Build.getSerial()</string>
+    <string name="usage_audit_serial_source_debug">Debug override</string>
+    <string name="usage_audit_serial_override">Debug serial override</string>
+    <string name="usage_audit_serial_override_empty">Not set</string>
+    <string name="usage_audit_restriction_serial_title">Device serial</string>
+    <string name="usage_audit_restriction_serial_description" formatted="false">Knox Manage lookup: ${DeviceSerialNumber}</string>
+    <string name="usage_audit_model">Model</string>
+    <string name="usage_audit_usage_permission">Usage access</string>
+    <string name="usage_audit_usage_permission_granted">Granted</string>
+    <string name="usage_audit_usage_permission_denied">Not granted. Open settings to allow access.</string>
+    <string name="usage_audit_open_usage_settings">Open usage access settings</string>
+    <string name="usage_audit_screen_time_today">Screen time today</string>
+    <string name="usage_audit_collect_now">Collect now</string>
+    <string name="usage_audit_watched_apps">Watched apps</string>
+    <string name="usage_audit_app_stats">%1$d opens · %2$s</string>
 
     <string name="app_info_drop_target_label">App info</string>
     <string name="debug_restart_launcher">Restart Apro Launcher</string>
