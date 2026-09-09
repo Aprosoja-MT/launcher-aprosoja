@@ -37,6 +37,7 @@ import androidx.lifecycle.lifecycleScope
 import app.lawnchair.LawnchairApp.Companion.showQuickstepWarningIfNecessary
 import app.lawnchair.compat.LawnchairQuickstepCompat
 import app.lawnchair.data.AppDatabase
+import app.lawnchair.data.usage.PingScheduler
 import app.lawnchair.data.usage.UsageService
 import app.lawnchair.data.wallpaper.service.WallpaperService
 import app.lawnchair.factory.LawnchairWidgetHolder
@@ -449,6 +450,7 @@ class LawnchairLauncher : QuickstepLauncher() {
     override fun onResume() {
         super.onResume()
         restartIfPending()
+        PingScheduler.sync(this)
         lifecycleScope.launch(Dispatchers.IO) {
             UsageService.INSTANCE.get(this@LawnchairLauncher).collectToday()
         }

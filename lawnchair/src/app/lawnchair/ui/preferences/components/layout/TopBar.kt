@@ -20,6 +20,7 @@ import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
@@ -40,10 +41,30 @@ fun TopBar(
     modifier: Modifier = Modifier,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     actions: @Composable RowScope.() -> Unit = {},
+    title: @Composable (() -> Unit)? = null,
 ) {
     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    val navigationIcon: @Composable () -> Unit = {
+        if (backArrowVisible) {
+            ClickableIcon(
+                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                onClick = { backDispatcher?.onBackPressed() },
+            )
+        }
+    }
 
-    if (isExpandedScreen) {
+    if (title != null) {
+        CenterAlignedTopAppBar(
+            modifier = modifier,
+            title = title,
+            actions = actions,
+            navigationIcon = navigationIcon,
+            scrollBehavior = scrollBehavior,
+            colors = TopAppBarDefaults.topAppBarColors().copy(
+                scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ),
+        )
+    } else if (isExpandedScreen) {
         TopAppBar(
             modifier = modifier,
             title = {
@@ -54,14 +75,7 @@ fun TopBar(
                 )
             },
             actions = actions,
-            navigationIcon = {
-                if (backArrowVisible) {
-                    ClickableIcon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        onClick = { backDispatcher?.onBackPressed() },
-                    )
-                }
-            },
+            navigationIcon = navigationIcon,
             scrollBehavior = scrollBehavior,
             colors = TopAppBarDefaults.topAppBarColors().copy(
                 scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -76,14 +90,7 @@ fun TopBar(
                 )
             },
             actions = actions,
-            navigationIcon = {
-                if (backArrowVisible) {
-                    ClickableIcon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        onClick = { backDispatcher?.onBackPressed() },
-                    )
-                }
-            },
+            navigationIcon = navigationIcon,
             scrollBehavior = scrollBehavior,
             colors = TopAppBarDefaults.topAppBarColors().copy(
                 scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,

@@ -31,6 +31,9 @@ interface UsageDao {
     @Query("DELETE FROM watched_apps WHERE packageName = :packageName")
     suspend fun deleteWatched(packageName: String)
 
+    @Query("DELETE FROM watched_apps")
+    suspend fun deleteAllWatched()
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertDeviceUsage(usage: DailyDeviceUsage)
 
@@ -48,6 +51,18 @@ interface UsageDao {
 
     @Query("DELETE FROM daily_app_usage WHERE date < :cutoff")
     suspend fun pruneAppUsage(cutoff: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPing(ping: LocationPing)
+
+    @Query("SELECT * FROM location_pings ORDER BY timestamp DESC LIMIT :limit")
+    fun observeRecentPings(limit: Int): Flow<List<LocationPing>>
+
+    @Query("SELECT * FROM location_pings ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getLatestPing(): LocationPing?
+
+    @Query("DELETE FROM location_pings WHERE timestamp < :cutoff")
+    suspend fun prunePings(cutoff: Long)
 
     @RawQuery
     suspend fun checkpoint(supportSQLiteQuery: SupportSQLiteQuery): Int

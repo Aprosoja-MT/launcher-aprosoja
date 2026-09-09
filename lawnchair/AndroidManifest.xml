@@ -22,8 +22,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="com.google.android.apps.nexuslauncher.permission.QSB" />
     <uses-permission android:name="com.kieronquinn.app.smartspacer.permission.ACCESS_SMARTSPACER"/>
     <uses-permission android:name="android.permission.READ_CONTACTS" />
@@ -154,6 +158,11 @@
             android:exported="false"
             android:process=":bugReport"
             android:foregroundServiceType="dataSync" />
+
+        <service
+            android:name="app.lawnchair.data.usage.LocationPingService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
 
         <receiver
             android:name="app.lawnchair.smartspace.SmartspaceAppWidgetProvider"

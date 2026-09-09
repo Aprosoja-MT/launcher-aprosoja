@@ -15,6 +15,7 @@ import app.lawnchair.data.iconoverride.IconOverrideDao
 import app.lawnchair.data.usage.DailyAppUsage
 import app.lawnchair.data.usage.DailyDeviceUsage
 import app.lawnchair.data.usage.DeviceIdentity
+import app.lawnchair.data.usage.LocationPing
 import app.lawnchair.data.usage.UsageDao
 import app.lawnchair.data.usage.WatchedApp
 import app.lawnchair.data.wallpaper.Wallpaper
@@ -32,8 +33,9 @@ import kotlinx.coroutines.runBlocking
         WatchedApp::class,
         DailyDeviceUsage::class,
         DailyAppUsage::class,
+        LocationPing::class,
     ],
-    version = 4,
+    version = 5,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -108,6 +110,27 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `location_pings` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `timestamp` INTEGER NOT NULL,
+                        `latitude` REAL NOT NULL,
+                        `longitude` REAL NOT NULL,
+                        `accuracyMeters` REAL NOT NULL,
+                        `speedMps` REAL,
+                        `intervalMin` INTEGER NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_location_pings_timestamp` ON `location_pings` (`timestamp`)",
+                )
+            }
+        }
+
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
@@ -162,6 +185,7 @@ abstract class AppDatabase : RoomDatabase() {
             ).addMigrations(MIGRATION_1_3)
                 .addMigrations(MIGRATION_2_3)
                 .addMigrations(MIGRATION_3_4)
+                .addMigrations(MIGRATION_4_5)
                 .build()
         }
     }

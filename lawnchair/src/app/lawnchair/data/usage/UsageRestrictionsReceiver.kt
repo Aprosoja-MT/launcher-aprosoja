@@ -8,5 +8,6 @@ class UsageRestrictionsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED) return
         UsageCollectWorker.enqueueOnce(context)
+        UsageService.INSTANCE.get(context).refresh()
     }
 }

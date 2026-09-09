@@ -8,6 +8,7 @@ import androidx.core.content.getSystemService
 
 object UsageCollector {
     suspend fun collectToday(context: Context, dao: UsageDao): Boolean {
+        WatchedPackages.sync(context, dao)
         val serial = DeviceSerial.resolve(context) ?: return false
         val existing = dao.getIdentity()
         if (existing == null || existing.tabletId != serial) {

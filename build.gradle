@@ -156,7 +156,7 @@ android {
     namespace "com.android.launcher3"
     defaultConfig {
         applicationId "br.com.aprosoja.launcher"
-        versionCode 15_00_02_03_00
+        versionCode 15_00_02_04_00
         versionName "${versionDisplayName}"
         buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${versionDisplayName}\""
         buildConfigField "String", "MAJOR_VERSION", "\"${majorVersion}\""
@@ -391,6 +391,7 @@ dependencies {
     implementation libs.bundles.room
     ksp libs.room.compiler
     implementation libs.androidx.work.runtime.ktx
+    implementation libs.play.services.location
 
     implementation libs.libsu.service
 
@@ -444,6 +445,7 @@ licensee {
     allowUrl("https://github.com/patrykmichalik/opto/blob/master/LICENSE")
     allowUrl("https://github.com/RikkaApps/HiddenApiRefinePlugin/blob/main/LICENSE")
     allowUrl("https://opensource.org/licenses/mit-license.php")
+    allowUrl("https://developer.android.com/studio/terms.html")
 
     bundleAndroidAsset = true
     androidAssetReportPath = 'licenses.json'

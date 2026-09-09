@@ -1,16 +1,19 @@
 package app.lawnchair.ui.preferences.destinations
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.text.format.DateUtils
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -19,6 +22,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.lawnchair.data.usage.PingIntervalSource
 import app.lawnchair.data.usage.SerialSource
 import app.lawnchair.data.usage.UsageAuditUiState
 import app.lawnchair.data.usage.UsageService
@@ -26,6 +30,7 @@ import app.lawnchair.ui.preferences.LocalIsExpandedScreen
 import app.lawnchair.ui.preferences.components.AppItem
 import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.controls.TextPreference
+import app.lawnchair.ui.preferences.components.layout.ClickableIcon
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayoutLazyColumn
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import app.lawnchair.ui.preferences.components.layout.preferenceGroupItems
@@ -40,24 +45,12 @@ fun UsageAuditPreferences(
     val context = LocalContext.current
     val service = remember { UsageService.INSTANCE.get(context) }
     val uiState by service.observeUiState().collectAsStateWithLifecycle(
-        initialValue = UsageAuditUiState(
-            tabletId = null,
-            serialValid = false,
-            serialSource = SerialSource.NONE,
-            debugOverride = "",
-            model = "",
-            hasUsagePermission = false,
-            screenOnMs = 0L,
-            watched = emptyMap(),
-            appUsageByPackage = emptyMap(),
-        ),
+        initialValue = UsageAuditUiState.Empty,
     )
     val lifecycleOwner = LocalLifecycleOwner.current
-    var hasUsagePermission by remember { mutableStateOf(service.hasUsagePermission()) }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                hasUsagePermission = service.hasUsagePermission()
                 service.refresh()
             }
         }
@@ -85,10 +78,29 @@ fun UsageAuditPreferences(
     } else {
         stringResource(id = R.string.usage_audit_serial_missing)
     }
-    val permissionText = if (hasUsagePermission) {
+    val permissionText = if (uiState.hasUsagePermission) {
         stringResource(id = R.string.usage_audit_usage_permission_granted)
     } else {
         stringResource(id = R.string.usage_audit_usage_permission_denied)
+    }
+    val locationPermissionText = if (uiState.hasLocationPermission) {
+        stringResource(id = R.string.usage_audit_ping_location_granted)
+    } else {
+        stringResource(id = R.string.usage_audit_ping_location_denied)
+    }
+    val pingSourceText = when (uiState.pingIntervalSource) {
+        PingIntervalSource.KNOX -> stringResource(id = R.string.usage_audit_ping_source_knox)
+        PingIntervalSource.DEBUG -> stringResource(id = R.string.usage_audit_ping_source_debug)
+        PingIntervalSource.DEFAULT -> stringResource(id = R.string.usage_audit_ping_source_default)
+    }
+    val pingIntervalText = if (uiState.routeActive) {
+        stringResource(id = R.string.usage_audit_ping_interval_route, uiState.pingIntervalMin)
+    } else {
+        stringResource(
+            id = R.string.usage_audit_ping_interval_value,
+            uiState.pingIntervalMin,
+            pingSourceText,
+        )
     }
 
     PreferenceLayoutLazyColumn(
@@ -129,7 +141,7 @@ fun UsageAuditPreferences(
                         description = {
                             Text(
                                 text = permissionText,
-                                color = if (hasUsagePermission) {
+                                color = if (uiState.hasUsagePermission) {
                                     MaterialTheme.colorScheme.onSurfaceVariant
                                 } else {
                                     MaterialTheme.colorScheme.error
@@ -185,10 +197,128 @@ fun UsageAuditPreferences(
             }
         }
         preferenceGroupItems(
+            count = 5,
+            isFirstChild = false,
+            heading = { stringResource(id = R.string.usage_audit_ping_label) },
+        ) { index ->
+            when (index) {
+                0 -> {
+                    PreferenceTemplate(
+                        title = { Text(stringResource(id = R.string.usage_audit_ping_interval)) },
+                        description = { Text(pingIntervalText) },
+                    )
+                }
+                1 -> {
+                    PreferenceTemplate(
+                        title = { Text(stringResource(id = R.string.usage_audit_ping_location_permission)) },
+                        description = {
+                            Text(
+                                text = locationPermissionText,
+                                color = if (uiState.hasLocationPermission) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.error
+                                },
+                            )
+                        },
+                    )
+                }
+                2 -> {
+                    ClickablePreference(
+                        label = stringResource(id = R.string.usage_audit_ping_open_location_settings),
+                        onClick = { context.startActivity(service.locationSettingsIntent()) },
+                    )
+                }
+                3 -> {
+                    ClickablePreference(
+                        label = stringResource(id = R.string.usage_audit_ping_now),
+                        onClick = {
+                            scope.launch {
+                                service.collectPing()
+                            }
+                        },
+                    )
+                }
+                else -> {
+                    TextPreference(
+                        value = uiState.debugPingInterval,
+                        onChange = { value ->
+                            scope.launch {
+                                service.setDebugPingInterval(value)
+                            }
+                        },
+                        label = stringResource(id = R.string.usage_audit_ping_interval_override),
+                        description = { current ->
+                            current.ifBlank { emptyOverride }
+                        },
+                    )
+                }
+            }
+        }
+        if (uiState.recentPings.isEmpty()) {
+            preferenceGroupItems(
+                count = 1,
+                isFirstChild = false,
+                heading = { stringResource(id = R.string.usage_audit_ping_recent) },
+            ) {
+                PreferenceTemplate(
+                    title = { Text(stringResource(id = R.string.usage_audit_ping_empty)) },
+                )
+            }
+        } else {
+            preferenceGroupItems(
+                items = uiState.recentPings,
+                isFirstChild = false,
+                heading = { stringResource(id = R.string.usage_audit_ping_recent) },
+                key = { _, ping -> ping.id },
+            ) { _, ping ->
+                PreferenceTemplate(
+                    title = {
+                        Text(
+                            DateUtils.getRelativeTimeSpanString(
+                                ping.timestamp,
+                                System.currentTimeMillis(),
+                                DateUtils.MINUTE_IN_MILLIS,
+                            ).toString(),
+                        )
+                    },
+                    description = {
+                        Text(
+                            stringResource(
+                                id = R.string.usage_audit_ping_point,
+                                DateUtils.formatDateTime(
+                                    context,
+                                    ping.timestamp,
+                                    DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_SHOW_DATE,
+                                ),
+                                ping.latitude,
+                                ping.longitude,
+                                ping.accuracyMeters,
+                                ping.intervalMin,
+                            ),
+                        )
+                    },
+                    endWidget = {
+                        ClickableIcon(
+                            imageVector = Icons.Rounded.Place,
+                            onClick = { openPingOnMaps(context, ping.latitude, ping.longitude) },
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    },
+                )
+            }
+        }
+        preferenceGroupItems(
             items = uniqueApps,
             isFirstChild = false,
             dividerStartIndent = 40.dp,
-            heading = { stringResource(id = R.string.usage_audit_watched_apps) },
+            heading = {
+                if (uiState.knoxWatched) {
+                    stringResource(id = R.string.usage_audit_watched_apps_knox)
+                } else {
+                    stringResource(id = R.string.usage_audit_watched_apps)
+                }
+            },
             key = { _, app -> app.key.toString() },
         ) { _, app ->
             val packageName = app.key.componentName.packageName
@@ -197,14 +327,17 @@ fun UsageAuditPreferences(
             AppItem(
                 app = app,
                 onClick = {
-                    scope.launch {
-                        service.setWatched(packageName, app.label, !watched)
+                    if (!uiState.knoxWatched) {
+                        scope.launch {
+                            service.setWatched(packageName, app.label, !watched)
+                        }
                     }
                 },
                 widget = {
                     Checkbox(
                         checked = watched,
                         onCheckedChange = null,
+                        enabled = !uiState.knoxWatched,
                     )
                 },
                 endWidget = if (watched && usage != null) {
@@ -224,5 +357,13 @@ fun UsageAuditPreferences(
                 },
             )
         }
+    }
+}
+
+private fun openPingOnMaps(context: Context, latitude: Double, longitude: Double) {
+    val uri = Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude")
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+    } catch (_: Exception) {
     }
 }

@@ -57,6 +57,7 @@ fun PreferenceLayout(
     scrollState: ScrollState? = rememberScrollState(),
     actions: @Composable RowScope.() -> Unit = {},
     bottomBar: @Composable () -> Unit = { BottomSpacer() },
+    title: @Composable (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     PreferenceScaffold(
@@ -66,6 +67,7 @@ fun PreferenceLayout(
         isExpandedScreen = isExpandedScreen,
         actions = actions,
         bottomBar = bottomBar,
+        title = title,
     ) {
         PreferenceColumn(
             contentPadding = it,
