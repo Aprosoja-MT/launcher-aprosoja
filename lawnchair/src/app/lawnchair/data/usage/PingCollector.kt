@@ -40,5 +40,6 @@ object PingCollector {
             ),
         )
         dao.prunePings(System.currentTimeMillis() - RETENTION_MS)
+        LauncherSyncWorker.enqueueOnce(context)
     }
 }

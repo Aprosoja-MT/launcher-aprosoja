@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.work.Configuration
 import app.lawnchair.backup.LawnchairBackup
+import app.lawnchair.data.usage.LauncherSyncWorker
 import app.lawnchair.data.usage.PingScheduler
 import app.lawnchair.data.usage.UsageCollectWorker
 import app.lawnchair.flowerpot.Flowerpot
@@ -74,6 +75,7 @@ class LawnchairApp : Application(), Configuration.Provider {
         Flowerpot.Manager.getInstance(this)
         UsageCollectWorker.enqueue(this)
         PingScheduler.sync(this)
+        LauncherSyncWorker.enqueue(this)
     }
 
     fun hideClockInStatusBar() {

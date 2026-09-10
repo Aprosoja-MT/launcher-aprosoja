@@ -71,6 +71,12 @@ class UsageService(private val context: Context) : SafeCloseable {
             watched = query.watched.associateBy { it.packageName },
             knoxWatched = WatchedPackages.isControlled(context),
             appUsageByPackage = query.apps.associateBy { it.packageName },
+            syncConfigured = LauncherApiConfig.isConfigured(context),
+            lastSyncAt = LauncherAuthStore(context).lastSyncAt(),
+            username = LauncherApiConfig.username(context),
+            debugApiUrl = LauncherApiConfig.debugUrl(context),
+            debugBootstrap = LauncherApiConfig.debugSecret(context),
+            debugUsername = LauncherApiConfig.debugUsername(context),
         )
     }
 
@@ -80,7 +86,28 @@ class UsageService(private val context: Context) : SafeCloseable {
     }
 
     suspend fun collectToday(): Boolean = withContext(Dispatchers.IO) {
-        UsageCollector.collectToday(context, dao)
+        val collected = UsageCollector.collectToday(context, dao)
+        LauncherSyncWorker.enqueueOnce(context)
+        collected
+    }
+
+    suspend fun syncNow(): Boolean = withContext(Dispatchers.IO) {
+        LauncherSyncClient.sync(context, dao)
+    }
+
+    fun setDebugApiUrl(value: String) {
+        LauncherApiConfig.setDebugUrl(context, value)
+        refresh()
+    }
+
+    fun setDebugBootstrap(value: String) {
+        LauncherApiConfig.setDebugSecret(context, value)
+        refresh()
+    }
+
+    fun setDebugUsername(value: String) {
+        LauncherApiConfig.setDebugUsername(context, value)
+        refresh()
     }
 
     suspend fun collectPing(): Boolean = withContext(Dispatchers.IO) {

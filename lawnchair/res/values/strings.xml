@@ -233,11 +233,31 @@
     <string name="usage_audit_ping_recent">Recent pings</string>
     <string name="usage_audit_ping_empty">No points yet</string>
     <string name="usage_audit_ping_point">%1$s · %2$.5f, %3$.5f · ±%4$.0f m · %5$d min</string>
-    <string name="usage_audit_ping_channel">Route recording</string>
+    <string name="usage_audit_ping_channel">Location tracking</string>
+    <string name="usage_audit_ping_notification">Keeping location and sync active</string>
     <string name="usage_audit_ping_route_notification">Recording tablet route</string>
+    <string name="usage_audit_battery_title">Battery optimization</string>
+    <string name="usage_audit_battery_message">Allow unrestricted battery so location, usage audit, and sync keep working with the screen off.</string>
+    <string name="usage_audit_battery_confirm">Allow</string>
     <string name="usage_audit_restriction_ping_interval_title">Ping interval (minutes)</string>
     <string name="usage_audit_restriction_ping_interval_description">1–14 starts route recording. 15–60 is the heartbeat.</string>
     <string name="usage_audit_app_stats">%1$d opens · %2$s</string>
+    <string name="usage_audit_sync">Cloud sync</string>
+    <string name="usage_audit_sync_ready">Ready · last sync %1$s</string>
+    <string name="usage_audit_sync_never">Ready · not synced yet</string>
+    <string name="usage_audit_sync_missing">API URL, bootstrap secret, and username are required (Knox or debug)</string>
+    <string name="usage_audit_sync_now">Sync now</string>
+    <string name="usage_audit_username">Username</string>
+    <string name="usage_audit_username_missing">Username unavailable. Device registration is paused.</string>
+    <string name="usage_audit_username_override">Debug username</string>
+    <string name="usage_audit_sync_url_override">Debug API URL</string>
+    <string name="usage_audit_sync_secret_override">Debug bootstrap secret</string>
+    <string name="usage_audit_restriction_api_url_title">Launcher API URL</string>
+    <string name="usage_audit_restriction_api_url_description">Base URL, e.g. https://host:4436</string>
+    <string name="usage_audit_restriction_api_secret_title">Launcher bootstrap secret</string>
+    <string name="usage_audit_restriction_api_secret_description">Same value as LauncherAuth:BootstrapSecret on the API</string>
+    <string name="usage_audit_restriction_username_title">Username</string>
+    <string name="usage_audit_restriction_username_description" formatted="false">Knox Manage lookup: ${UserName}</string>
 
     <string name="app_info_drop_target_label">App info</string>
     <string name="debug_restart_launcher">Restart Apro Launcher</string>

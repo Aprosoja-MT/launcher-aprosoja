@@ -66,6 +66,7 @@ import app.lawnchair.preferences2.preferenceManager2
 import app.lawnchair.ui.OverflowMenu
 import app.lawnchair.ui.preferences.LocalNavController
 import app.lawnchair.ui.preferences.components.AnnouncementPreference
+import app.lawnchair.ui.preferences.components.BatteryOptimizationPrompt
 import app.lawnchair.ui.preferences.components.controls.PreferenceCategory
 import app.lawnchair.ui.preferences.components.controls.WarningPreference
 import app.lawnchair.ui.preferences.components.layout.ClickableIcon
@@ -115,6 +116,7 @@ fun PreferencesDashboard(
         actions = { PreferencesOverflowMenu(currentRoute = currentRoute, onNavigate = onNavigate) },
         title = { PreferencesDashboardTitle() },
     ) {
+        BatteryOptimizationPrompt()
         AnnouncementPreference()
 
         if (BuildConfig.APPLICATION_ID.contains("nightly") || BuildConfig.DEBUG) {

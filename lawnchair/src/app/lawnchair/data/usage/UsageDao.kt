@@ -46,6 +46,15 @@ interface UsageDao {
     @Query("SELECT * FROM daily_app_usage WHERE date = :date")
     fun observeAppUsage(date: String): Flow<List<DailyAppUsage>>
 
+    @Query("SELECT * FROM daily_device_usage ORDER BY date ASC LIMIT :limit OFFSET :offset")
+    suspend fun getDeviceUsagesPage(limit: Int, offset: Int): List<DailyDeviceUsage>
+
+    @Query("SELECT * FROM daily_app_usage ORDER BY date ASC, packageName ASC LIMIT :limit OFFSET :offset")
+    suspend fun getAppUsagesPage(limit: Int, offset: Int): List<DailyAppUsage>
+
+    @Query("SELECT * FROM location_pings WHERE id > :afterId ORDER BY id ASC LIMIT :limit")
+    suspend fun getPingsAfterId(afterId: Long, limit: Int): List<LocationPing>
+
     @Query("DELETE FROM daily_device_usage WHERE date < :cutoff")
     suspend fun pruneDeviceUsage(cutoff: String)
 

@@ -144,8 +144,8 @@ final def ciRef = System.getenv("GITHUB_REF") ?: ""
 final def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
 final def isReleaseBuild = ciBuild && ciRef.contains("beta")
 final def devReleaseName = ciBuild ? "Dev.(#${ciRunNumber})" : "Dev.(${buildCommit})"
-final def version = "15"
-final def releaseName = "Beta 3"
+final def version = "1"
+final def releaseName = "Initial"
 final def versionDisplayName = "${version}.${isReleaseBuild ? releaseName : devReleaseName}"
 final def majorVersion = versionDisplayName.split("\\.")[0]
 
@@ -156,7 +156,7 @@ android {
     namespace "com.android.launcher3"
     defaultConfig {
         applicationId "br.com.aprosoja.launcher"
-        versionCode 15_00_02_04_00
+        versionCode 1_00_00_00
         versionName "${versionDisplayName}"
         buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${versionDisplayName}\""
         buildConfigField "String", "MAJOR_VERSION", "\"${majorVersion}\""

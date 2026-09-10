@@ -18,4 +18,22 @@
         android:description="@string/usage_audit_restriction_watched_description"
         android:restrictionType="string"
         android:defaultValue="" />
+    <restriction
+        android:key="launcher_api_base_url"
+        android:title="@string/usage_audit_restriction_api_url_title"
+        android:description="@string/usage_audit_restriction_api_url_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="launcher_bootstrap_secret"
+        android:title="@string/usage_audit_restriction_api_secret_title"
+        android:description="@string/usage_audit_restriction_api_secret_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="username"
+        android:title="@string/usage_audit_restriction_username_title"
+        android:description="@string/usage_audit_restriction_username_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
 </restrictions>

@@ -27,6 +27,7 @@ import app.lawnchair.data.usage.SerialSource
 import app.lawnchair.data.usage.UsageAuditUiState
 import app.lawnchair.data.usage.UsageService
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
+import app.lawnchair.ui.preferences.components.BatteryOptimizationPrompt
 import app.lawnchair.ui.preferences.components.AppItem
 import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.controls.TextPreference
@@ -102,7 +103,20 @@ fun UsageAuditPreferences(
             pingSourceText,
         )
     }
+    val syncStatus = when {
+        !uiState.syncConfigured -> stringResource(id = R.string.usage_audit_sync_missing)
+        uiState.lastSyncAt <= 0L -> stringResource(id = R.string.usage_audit_sync_never)
+        else -> stringResource(
+            id = R.string.usage_audit_sync_ready,
+            DateUtils.getRelativeTimeSpanString(
+                uiState.lastSyncAt,
+                System.currentTimeMillis(),
+                DateUtils.MINUTE_IN_MILLIS,
+            ).toString(),
+        )
+    }
 
+    BatteryOptimizationPrompt()
     PreferenceLayoutLazyColumn(
         label = stringResource(id = R.string.usage_audit_label),
         modifier = modifier,
@@ -191,6 +205,86 @@ fun UsageAuditPreferences(
                             scope.launch {
                                 service.collectToday()
                             }
+                        },
+                    )
+                }
+            }
+        }
+        preferenceGroupItems(
+            count = 6,
+            isFirstChild = false,
+            heading = { stringResource(id = R.string.usage_audit_sync) },
+        ) { index ->
+            when (index) {
+                0 -> {
+                    PreferenceTemplate(
+                        title = { Text(stringResource(id = R.string.usage_audit_sync)) },
+                        description = {
+                            Text(
+                                text = syncStatus,
+                                color = if (uiState.syncConfigured) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.error
+                                },
+                            )
+                        },
+                    )
+                }
+                1 -> {
+                    PreferenceTemplate(
+                        title = { Text(stringResource(id = R.string.usage_audit_username)) },
+                        description = {
+                            Text(
+                                text = uiState.username
+                                    ?: stringResource(id = R.string.usage_audit_username_missing),
+                                color = if (uiState.username != null) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.error
+                                },
+                            )
+                        },
+                    )
+                }
+                2 -> {
+                    ClickablePreference(
+                        label = stringResource(id = R.string.usage_audit_sync_now),
+                        onClick = {
+                            scope.launch {
+                                service.syncNow()
+                                service.refresh()
+                            }
+                        },
+                    )
+                }
+                3 -> {
+                    TextPreference(
+                        value = uiState.debugUsername,
+                        onChange = { value -> service.setDebugUsername(value) },
+                        label = stringResource(id = R.string.usage_audit_username_override),
+                        description = { current ->
+                            current.ifBlank { emptyOverride }
+                        },
+                    )
+                }
+                4 -> {
+                    TextPreference(
+                        value = uiState.debugApiUrl,
+                        onChange = { value -> service.setDebugApiUrl(value) },
+                        label = stringResource(id = R.string.usage_audit_sync_url_override),
+                        description = { current ->
+                            current.ifBlank { emptyOverride }
+                        },
+                    )
+                }
+                else -> {
+                    TextPreference(
+                        value = uiState.debugBootstrap,
+                        onChange = { value -> service.setDebugBootstrap(value) },
+                        label = stringResource(id = R.string.usage_audit_sync_secret_override),
+                        description = { current ->
+                            current.ifBlank { emptyOverride }
                         },
                     )
                 }

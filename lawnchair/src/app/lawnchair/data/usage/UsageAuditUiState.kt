@@ -17,6 +17,12 @@ data class UsageAuditUiState(
     val watched: Map<String, WatchedApp>,
     val knoxWatched: Boolean,
     val appUsageByPackage: Map<String, DailyAppUsage>,
+    val syncConfigured: Boolean,
+    val lastSyncAt: Long,
+    val username: String?,
+    val debugApiUrl: String,
+    val debugBootstrap: String,
+    val debugUsername: String,
 ) {
     companion object {
         val Empty = UsageAuditUiState(
@@ -36,6 +42,12 @@ data class UsageAuditUiState(
             watched = emptyMap(),
             knoxWatched = false,
             appUsageByPackage = emptyMap(),
+            syncConfigured = false,
+            lastSyncAt = 0L,
+            username = null,
+            debugApiUrl = "",
+            debugBootstrap = "",
+            debugUsername = "",
         )
     }
 }

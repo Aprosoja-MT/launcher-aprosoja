@@ -22,18 +22,21 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class LocationPingService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var activeIntervalMin: Int? = null
+    private var collectJob: Job? = null
     private val callback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             val intervalMin = PingInterval.resolve(this@LocationPingService)
-            if (!PingInterval.isRoute(intervalMin) ||
-                !LocationPermission.hasFine(this@LocationPingService) ||
+            if (!LocationPermission.hasFine(this@LocationPingService) ||
                 DeviceSerial.resolve(this@LocationPingService) == null
             ) {
                 stopUpdates()
@@ -66,7 +69,7 @@ class LocationPingService : Service() {
         )
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-            .setContentTitle(getString(R.string.usage_audit_ping_route_notification))
+            .setContentTitle(getString(R.string.usage_audit_ping_notification))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .build()
@@ -85,8 +88,7 @@ class LocationPingService : Service() {
             return START_NOT_STICKY
         }
         val intervalMin = PingInterval.resolve(this)
-        if (!PingInterval.isRoute(intervalMin) ||
-            !LocationPermission.hasFine(this) ||
+        if (!LocationPermission.hasFine(this) ||
             DeviceSerial.resolve(this) == null
         ) {
             stopUpdates()
@@ -94,6 +96,7 @@ class LocationPingService : Service() {
             return START_NOT_STICKY
         }
         startUpdates(intervalMin)
+        startCollectLoop()
         return START_STICKY
     }
 
@@ -115,8 +118,22 @@ class LocationPingService : Service() {
         }
     }
 
+    private fun startCollectLoop() {
+        if (collectJob?.isActive == true) return
+        collectJob = scope.launch {
+            val service = UsageService.INSTANCE.get(this@LocationPingService)
+            while (isActive) {
+                service.collectToday()
+                LauncherSyncWorker.enqueueOnce(this@LocationPingService)
+                delay(15 * 60_000L)
+            }
+        }
+    }
+
     private fun stopUpdates() {
         activeIntervalMin = null
+        collectJob?.cancel()
+        collectJob = null
         try {
             LocationServices.getFusedLocationProviderClient(this).removeLocationUpdates(callback)
         } catch (_: Exception) {

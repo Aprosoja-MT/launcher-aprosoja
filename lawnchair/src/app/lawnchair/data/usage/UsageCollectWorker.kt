@@ -15,6 +15,7 @@ class UsageCollectWorker(
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         UsageService.INSTANCE.get(applicationContext).collectToday()
+        LauncherSyncWorker.enqueueOnce(applicationContext)
         return Result.success()
     }
 
