@@ -40,7 +40,7 @@ object UsageCollector {
             )
         }
 
-        val watched = dao.getEnabledWatched()
+        val watched = dao.getWatched()
         if (watched.isNotEmpty()) {
             val openCounts = openCounts(usageStatsManager, start, now, watched.map { it.packageName }.toSet())
             val foreground = usageStatsManager.queryAndAggregateUsageStats(start, now)

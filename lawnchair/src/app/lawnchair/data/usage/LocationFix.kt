@@ -18,7 +18,7 @@ object LocationFix {
 
     @SuppressLint("MissingPermission")
     fun resolve(context: Context): Location? {
-        val fresh = current(context)
+        val fresh = fusedCurrent(context)
         if (fresh != null && isValid(fresh)) return fresh
         val last = lastKnown(context) ?: return null
         if (!isValid(last)) return null
@@ -31,11 +31,6 @@ object LocationFix {
     fun isValid(location: Location): Boolean {
         if (!location.latitude.isFinite() || !location.longitude.isFinite()) return false
         return location.latitude != 0.0 || location.longitude != 0.0
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun current(context: Context): Location? {
-        return fusedCurrent(context) ?: managerCurrent(context)
     }
 
     @SuppressLint("MissingPermission")
@@ -66,11 +61,6 @@ object LocationFix {
         } catch (_: Exception) {
             null
         }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun managerCurrent(context: Context): Location? {
-        return managerLast(context)
     }
 
     @SuppressLint("MissingPermission")

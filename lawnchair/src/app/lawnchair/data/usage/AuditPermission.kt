@@ -27,6 +27,8 @@ enum class AuditPermission {
     companion object {
         fun required(): List<AuditPermission> = entries.filter { it.isRequired() }
 
+        fun granted(context: Context): Set<AuditPermission> = entries.filterTo(mutableSetOf()) { it.isGranted(context) }
+
         fun missing(context: Context): List<AuditPermission> = required().filterNot { it.isGranted(context) }
     }
 }

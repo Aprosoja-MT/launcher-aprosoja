@@ -48,7 +48,7 @@ fun UsageAuditPreferences(
 ) {
     val context = LocalContext.current
     val service = remember { UsageService.INSTANCE.get(context) }
-    val uiState by service.observeUiState().collectAsStateWithLifecycle(
+    val uiState by remember { service.observeUiState() }.collectAsStateWithLifecycle(
         initialValue = UsageAuditUiState.Empty,
     )
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -69,7 +69,6 @@ fun UsageAuditPreferences(
     val emptyOverride = stringResource(id = R.string.usage_audit_serial_override_empty)
     val serialSourceText = when (uiState.serialSource) {
         SerialSource.KNOX -> stringResource(id = R.string.usage_audit_serial_source_knox)
-        SerialSource.BUILD -> stringResource(id = R.string.usage_audit_serial_source_build)
         SerialSource.DEBUG -> stringResource(id = R.string.usage_audit_serial_source_debug)
         SerialSource.NONE -> stringResource(id = R.string.usage_audit_serial_missing)
     }
@@ -370,7 +369,7 @@ fun UsageAuditPreferences(
             key = { _, app -> app.key.toString() },
         ) { _, app ->
             val packageName = app.key.componentName.packageName
-            val watched = uiState.watched[packageName]?.enabled == true
+            val watched = packageName in uiState.watched
             val usage = uiState.appUsageByPackage[packageName]
             AppItem(
                 app = app,

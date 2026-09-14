@@ -22,8 +22,8 @@ interface UsageDao {
     @Query("SELECT * FROM watched_apps")
     fun observeWatched(): Flow<List<WatchedApp>>
 
-    @Query("SELECT * FROM watched_apps WHERE enabled = 1")
-    suspend fun getEnabledWatched(): List<WatchedApp>
+    @Query("SELECT * FROM watched_apps")
+    suspend fun getWatched(): List<WatchedApp>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertWatched(app: WatchedApp)

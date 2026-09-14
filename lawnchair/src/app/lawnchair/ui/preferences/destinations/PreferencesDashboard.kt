@@ -244,7 +244,7 @@ private fun PreferencesDeviceStatus() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val service = remember { UsageService.INSTANCE.get(context) }
-    val uiState by service.observeUiState().collectAsStateWithLifecycle(
+    val uiState by remember { service.observeUiState() }.collectAsStateWithLifecycle(
         initialValue = UsageAuditUiState.Empty,
     )
     val lifecycleOwner = LocalLifecycleOwner.current

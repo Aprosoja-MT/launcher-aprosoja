@@ -35,7 +35,7 @@ import kotlinx.coroutines.runBlocking
         DailyAppUsage::class,
         LocationPing::class,
     ],
-    version = 6,
+    version = 7,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -225,6 +225,28 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `watched_apps_new` (
+                        `packageName` TEXT NOT NULL,
+                        `label` TEXT NOT NULL,
+                        PRIMARY KEY(`packageName`)
+                    )
+                    """.trimIndent(),
+                )
+                database.execSQL(
+                    """
+                    INSERT INTO `watched_apps_new` (`packageName`, `label`)
+                    SELECT `packageName`, `label` FROM `watched_apps` WHERE `enabled` = 1
+                    """.trimIndent(),
+                )
+                database.execSQL("DROP TABLE `watched_apps`")
+                database.execSQL("ALTER TABLE `watched_apps_new` RENAME TO `watched_apps`")
+            }
+        }
+
         val INSTANCE = MainThreadInitializedObject { context ->
             Room.databaseBuilder(
                 context,
@@ -235,6 +257,7 @@ abstract class AppDatabase : RoomDatabase() {
                 .addMigrations(MIGRATION_3_4)
                 .addMigrations(MIGRATION_4_5)
                 .addMigrations(MIGRATION_5_6)
+                .addMigrations(MIGRATION_6_7)
                 .build()
         }
     }

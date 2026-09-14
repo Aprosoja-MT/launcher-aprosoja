@@ -25,13 +25,12 @@ object WatchedPackages {
                 WatchedApp(
                     packageName = packageName,
                     label = label(context, packageName),
-                    enabled = true,
                 ),
             )
         }
     }
 
-    fun parse(raw: String): List<String> {
+    private fun parse(raw: String): List<String> {
         return raw.split(',', ';', '\n')
             .map { it.trim() }
             .filter { packageName ->

@@ -452,7 +452,7 @@ class LawnchairLauncher : QuickstepLauncher() {
         restartIfPending()
         PingScheduler.sync(this)
         lifecycleScope.launch(Dispatchers.IO) {
-            UsageService.INSTANCE.get(this@LawnchairLauncher).collectToday()
+            UsageService.INSTANCE.get(this@LawnchairLauncher).collectTodayIfStale()
         }
 
         dragLayer.viewTreeObserver.addOnDrawListener(

@@ -200,7 +200,6 @@
     <string name="usage_audit_serial_missing">Serial unavailable. Collection is paused.</string>
     <string name="usage_audit_serial_value">%1$s · %2$s</string>
     <string name="usage_audit_serial_source_knox">Knox Manage</string>
-    <string name="usage_audit_serial_source_build">Build.getSerial()</string>
     <string name="usage_audit_serial_source_debug">Debug override</string>
     <string name="usage_audit_serial_override">Debug serial override</string>
     <string name="usage_audit_serial_override_empty">Not set</string>

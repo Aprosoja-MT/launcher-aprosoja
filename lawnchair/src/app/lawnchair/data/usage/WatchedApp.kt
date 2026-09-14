@@ -7,5 +7,4 @@ import androidx.room.PrimaryKey
 data class WatchedApp(
     @PrimaryKey val packageName: String,
     val label: String,
-    val enabled: Boolean = true,
 )

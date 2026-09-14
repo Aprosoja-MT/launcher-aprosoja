@@ -6,11 +6,7 @@ data class UsageAuditUiState(
     val serialSource: SerialSource,
     val debugOverride: String,
     val model: String,
-    val hasUsagePermission: Boolean,
-    val hasLocationPermission: Boolean,
-    val hasBackgroundLocationPermission: Boolean,
-    val hasNotificationPermission: Boolean,
-    val batteryOptimizationIgnored: Boolean,
+    val grantedPermissions: Set<AuditPermission>,
     val screenOnMs: Long,
     val pingMode: PingMode,
     val recentPings: List<LocationPing>,
@@ -26,13 +22,7 @@ data class UsageAuditUiState(
     val debugBootstrap: String,
     val debugUsername: String,
 ) {
-    fun isGranted(permission: AuditPermission): Boolean = when (permission) {
-        AuditPermission.USAGE_ACCESS -> hasUsagePermission
-        AuditPermission.LOCATION -> hasLocationPermission
-        AuditPermission.BACKGROUND_LOCATION -> hasBackgroundLocationPermission
-        AuditPermission.NOTIFICATIONS -> hasNotificationPermission
-        AuditPermission.BATTERY -> batteryOptimizationIgnored
-    }
+    fun isGranted(permission: AuditPermission): Boolean = permission in grantedPermissions
 
     companion object {
         val Empty = UsageAuditUiState(
@@ -41,11 +31,7 @@ data class UsageAuditUiState(
             serialSource = SerialSource.NONE,
             debugOverride = "",
             model = "",
-            hasUsagePermission = false,
-            hasLocationPermission = false,
-            hasBackgroundLocationPermission = false,
-            hasNotificationPermission = false,
-            batteryOptimizationIgnored = false,
+            grantedPermissions = emptySet(),
             screenOnMs = 0L,
             pingMode = PingMode.IDLE,
             recentPings = emptyList(),

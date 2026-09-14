@@ -20,6 +20,7 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -128,8 +129,7 @@ class LocationPingService : Service() {
             val service = UsageService.INSTANCE.get(this@LocationPingService)
             while (isActive) {
                 service.collectToday()
-                LauncherSyncWorker.enqueueOnce(this@LocationPingService)
-                delay(PingMode.IDLE.intervalMs)
+                delay(TimeUnit.MINUTES.toMillis(PingRules.COLLECT_MINUTES))
             }
         }
     }

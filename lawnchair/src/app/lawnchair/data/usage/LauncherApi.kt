@@ -18,7 +18,7 @@ interface LauncherApi {
     suspend fun sync(
         @Header("Authorization") authorization: String,
         @Body body: LauncherSyncRequest,
-    ): LauncherSyncResponse
+    )
 
     companion object {
         fun create(baseUrl: String): LauncherApi = Retrofit.Builder()
@@ -40,7 +40,6 @@ data class LauncherRegisterRequest(
 
 @Serializable
 data class LauncherRegisterResponse(
-    val tabletId: String? = null,
     val token: String? = null,
     val error: String? = null,
 )
@@ -85,19 +84,4 @@ data class LauncherLocationPingDto(
     val accuracyMeters: Float,
     val speedMps: Float? = null,
     val intervalSec: Int,
-)
-
-@Serializable
-data class LauncherSyncCount(
-    val accepted: Int = 0,
-    val duplicates: Int = 0,
-)
-
-@Serializable
-data class LauncherSyncResponse(
-    val deviceUpserted: Boolean = false,
-    val deviceUsages: LauncherSyncCount = LauncherSyncCount(),
-    val appUsages: LauncherSyncCount = LauncherSyncCount(),
-    val locationPings: LauncherSyncCount = LauncherSyncCount(),
-    val errors: List<String> = emptyList(),
 )

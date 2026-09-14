@@ -88,7 +88,7 @@ object LauncherSyncClient {
         var currentToken = token
         var pingAfter = store.lastSyncedPingId()
         var retriedAuth = false
-        val labels = dao.getEnabledWatched().associate { it.packageName to it.label }
+        val labels = dao.getWatched().associate { it.packageName to it.label }
 
         repeat(MAX_BATCHES) {
             val deviceUsages = dao.getPendingDeviceUsages(DEVICE_USAGE_BATCH)

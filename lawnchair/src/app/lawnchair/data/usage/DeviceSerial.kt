@@ -2,15 +2,18 @@ package app.lawnchair.data.usage
 
 import android.content.Context
 import android.content.RestrictionsManager
-import android.os.Build
 import com.android.launcher3.BuildConfig
 
 enum class SerialSource {
     KNOX,
-    BUILD,
     DEBUG,
     NONE,
 }
+
+data class ResolvedSerial(
+    val value: String?,
+    val source: SerialSource,
+)
 
 object DeviceSerial {
     const val RESTRICTION_KEY = "tablet_serial"
@@ -18,17 +21,12 @@ object DeviceSerial {
     private const val DEBUG_PREFS = "usage_audit"
     private const val DEBUG_KEY = "debug_serial"
 
-    fun resolve(context: Context): String? {
-        return fromRestrictions(context)
-            ?: fromBuild()
-            ?: fromDebugOverride(context)
-    }
+    fun resolve(context: Context): String? = resolved(context).value
 
-    fun source(context: Context): SerialSource {
-        fromRestrictions(context)?.let { return SerialSource.KNOX }
-        fromBuild()?.let { return SerialSource.BUILD }
-        fromDebugOverride(context)?.let { return SerialSource.DEBUG }
-        return SerialSource.NONE
+    fun resolved(context: Context): ResolvedSerial {
+        fromRestrictions(context)?.let { return ResolvedSerial(it, SerialSource.KNOX) }
+        fromDebugOverride(context)?.let { return ResolvedSerial(it, SerialSource.DEBUG) }
+        return ResolvedSerial(null, SerialSource.NONE)
     }
 
     fun debugOverride(context: Context): String {
@@ -46,7 +44,7 @@ object DeviceSerial {
             .apply()
     }
 
-    fun isValid(serial: String?): Boolean {
+    private fun isValid(serial: String?): Boolean {
         if (serial.isNullOrBlank()) return false
         if (serial.equals("unknown", ignoreCase = true)) return false
         return serial.any { it != '0' }
@@ -57,15 +55,6 @@ object DeviceSerial {
             ?.applicationRestrictions
             ?: return null
         return restrictions.getString(RESTRICTION_KEY)?.takeIf { isValid(it) }
-    }
-
-    private fun fromBuild(): String? {
-        val serial = try {
-            Build.getSerial()
-        } catch (_: SecurityException) {
-            null
-        }
-        return serial?.takeIf { isValid(it) }
     }
 
     private fun fromDebugOverride(context: Context): String? {

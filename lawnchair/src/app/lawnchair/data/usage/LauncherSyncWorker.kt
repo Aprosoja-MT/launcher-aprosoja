@@ -23,10 +23,9 @@ class LauncherSyncWorker(
     }
 
     companion object {
-        private const val UNIQUE_LEGACY_PERIODIC = "launcher_audit_sync"
         private const val UNIQUE_CHAIN = "launcher_audit_sync_chain"
         private const val UNIQUE_ONCE = "launcher_audit_sync_once"
-        private const val INTERVAL_MINUTES = PingRules.SYNC_IDLE_MINUTES
+        private const val INTERVAL_MINUTES = PingRules.SYNC_MINUTES
 
         private fun request(delayMinutes: Long) = OneTimeWorkRequestBuilder<LauncherSyncWorker>()
             .setConstraints(
@@ -38,9 +37,7 @@ class LauncherSyncWorker(
             .build()
 
         fun enqueue(context: Context) {
-            val manager = WorkManager.getInstance(context)
-            manager.cancelUniqueWork(UNIQUE_LEGACY_PERIODIC)
-            manager.enqueueUniqueWork(
+            WorkManager.getInstance(context).enqueueUniqueWork(
                 UNIQUE_CHAIN,
                 ExistingWorkPolicy.KEEP,
                 request(INTERVAL_MINUTES),

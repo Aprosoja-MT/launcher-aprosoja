@@ -15,7 +15,6 @@ class UsageCollectWorker(
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         UsageService.INSTANCE.get(applicationContext).collectToday()
-        LauncherSyncWorker.enqueueOnce(applicationContext)
         return Result.success()
     }
 
@@ -23,8 +22,10 @@ class UsageCollectWorker(
         private const val UNIQUE_NAME = "usage_collect"
 
         fun enqueue(context: Context) {
-            val request = PeriodicWorkRequestBuilder<UsageCollectWorker>(15, TimeUnit.MINUTES)
-                .build()
+            val request = PeriodicWorkRequestBuilder<UsageCollectWorker>(
+                PingRules.COLLECT_MINUTES,
+                TimeUnit.MINUTES,
+            ).build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 UNIQUE_NAME,
                 ExistingPeriodicWorkPolicy.KEEP,
