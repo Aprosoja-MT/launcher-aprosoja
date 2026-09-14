@@ -20,10 +20,11 @@ class LocationPingWorker(
     companion object {
         private const val UNIQUE_NAME = "location_ping"
 
-        fun enqueue(context: Context, intervalMin: Int) {
-            val minutes = intervalMin.coerceAtLeast(PingInterval.ROUTE_THRESHOLD).toLong()
-            val request = PeriodicWorkRequestBuilder<LocationPingWorker>(minutes, TimeUnit.MINUTES)
-                .build()
+        fun enqueue(context: Context) {
+            val request = PeriodicWorkRequestBuilder<LocationPingWorker>(
+                PingRules.FALLBACK_PING_MINUTES,
+                TimeUnit.MINUTES,
+            ).build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 UNIQUE_NAME,
                 ExistingPeriodicWorkPolicy.UPDATE,

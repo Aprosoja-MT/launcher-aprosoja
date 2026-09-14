@@ -34,11 +34,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +61,7 @@ import app.lawnchair.LawnchairApp
 import app.lawnchair.LawnchairLauncher
 import app.lawnchair.backup.ui.restoreBackupOpener
 import app.lawnchair.backup.ui.restoreNovaBackupOpener
+import app.lawnchair.data.usage.AuditPermission
 import app.lawnchair.data.usage.UsageAuditUiState
 import app.lawnchair.data.usage.UsageService
 import app.lawnchair.preferences.getAdapter
@@ -66,7 +71,8 @@ import app.lawnchair.preferences2.preferenceManager2
 import app.lawnchair.ui.OverflowMenu
 import app.lawnchair.ui.preferences.LocalNavController
 import app.lawnchair.ui.preferences.components.AnnouncementPreference
-import app.lawnchair.ui.preferences.components.BatteryOptimizationPrompt
+import app.lawnchair.ui.preferences.components.AuditPermissionsPrompt
+import app.lawnchair.ui.preferences.components.auditPermissionLabel
 import app.lawnchair.ui.preferences.components.controls.PreferenceCategory
 import app.lawnchair.ui.preferences.components.controls.WarningPreference
 import app.lawnchair.ui.preferences.components.layout.ClickableIcon
@@ -74,6 +80,7 @@ import app.lawnchair.ui.preferences.components.layout.DividerColumn
 import app.lawnchair.ui.preferences.components.layout.PreferenceDivider
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
+import app.lawnchair.ui.preferences.components.rememberAuditPermissionRequest
 import app.lawnchair.ui.preferences.data.liveinfo.SyncLiveInformation
 import app.lawnchair.ui.preferences.navigation.About
 import app.lawnchair.ui.preferences.navigation.AppDrawer
@@ -97,6 +104,7 @@ import app.lawnchair.util.isDefaultLauncher
 import app.lawnchair.util.restartLauncher
 import com.android.launcher3.BuildConfig
 import com.android.launcher3.R
+import kotlinx.coroutines.launch
 
 @Composable
 fun PreferencesDashboard(
@@ -116,7 +124,7 @@ fun PreferencesDashboard(
         actions = { PreferencesOverflowMenu(currentRoute = currentRoute, onNavigate = onNavigate) },
         title = { PreferencesDashboardTitle() },
     ) {
-        BatteryOptimizationPrompt()
+        AuditPermissionsPrompt()
         AnnouncementPreference()
 
         if (BuildConfig.APPLICATION_ID.contains("nightly") || BuildConfig.DEBUG) {
@@ -234,6 +242,7 @@ fun PreferencesDashboard(
 @Composable
 private fun PreferencesDeviceStatus() {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val service = remember { UsageService.INSTANCE.get(context) }
     val uiState by service.observeUiState().collectAsStateWithLifecycle(
         initialValue = UsageAuditUiState.Empty,
@@ -277,20 +286,56 @@ private fun PreferencesDeviceStatus() {
                     modifier = Modifier.weight(1f),
                 )
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                DevicePermissionCheck(
-                    label = stringResource(id = R.string.usage_audit_usage_permission),
-                    checked = uiState.hasUsagePermission,
-                    modifier = Modifier.weight(1f),
+            uiState.lastSyncError?.let { error ->
+                DeviceStatusValue(
+                    label = stringResource(id = R.string.usage_audit_sync),
+                    value = stringResource(
+                        id = if (uiState.deviceRegistered) {
+                            R.string.usage_audit_sync_error_retrying
+                        } else {
+                            R.string.usage_audit_sync_error
+                        },
+                        error,
+                    ),
+                    error = true,
+                    maxLines = 4,
+                    modifier = Modifier.fillMaxWidth(),
                 )
-                DevicePermissionCheck(
-                    label = stringResource(id = R.string.usage_audit_ping_location_permission),
-                    checked = uiState.hasLocationPermission,
-                    modifier = Modifier.weight(1f),
-                )
+                if (!uiState.deviceRegistered) {
+                    var registering by remember { mutableStateOf(false) }
+                    TextButton(
+                        onClick = {
+                            registering = true
+                            scope.launch {
+                                service.syncNow()
+                                service.refresh()
+                                registering = false
+                            }
+                        },
+                        enabled = !registering,
+                    ) {
+                        Text(text = stringResource(id = R.string.usage_audit_register_retry))
+                    }
+                }
+            }
+            val request = rememberAuditPermissionRequest { service.refresh() }
+            AuditPermission.required().chunked(2).forEach { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    row.forEach { permission ->
+                        DevicePermissionCheck(
+                            label = auditPermissionLabel(permission),
+                            checked = uiState.isGranted(permission),
+                            onClick = { request(permission) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    if (row.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
             }
         }
     }
@@ -302,6 +347,7 @@ private fun DeviceStatusValue(
     value: String,
     modifier: Modifier = Modifier,
     error: Boolean = false,
+    maxLines: Int = 2,
 ) {
     Column(modifier = modifier) {
         Text(
@@ -317,7 +363,7 @@ private fun DeviceStatusValue(
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
             },
-            maxLines = 2,
+            maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
         )
     }
@@ -327,10 +373,11 @@ private fun DeviceStatusValue(
 private fun DevicePermissionCheck(
     label: String,
     checked: Boolean,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier,
+        modifier = modifier.clickable(enabled = !checked, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(

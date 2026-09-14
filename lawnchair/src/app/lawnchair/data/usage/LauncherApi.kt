@@ -84,7 +84,7 @@ data class LauncherLocationPingDto(
     val longitude: Double,
     val accuracyMeters: Float,
     val speedMps: Float? = null,
-    val intervalMin: Int,
+    val intervalSec: Int,
 )
 
 @Serializable

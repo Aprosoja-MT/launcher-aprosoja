@@ -22,19 +22,22 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.lawnchair.data.usage.PingIntervalSource
+import app.lawnchair.data.usage.AuditPermission
+import app.lawnchair.data.usage.PingMode
 import app.lawnchair.data.usage.SerialSource
 import app.lawnchair.data.usage.UsageAuditUiState
 import app.lawnchair.data.usage.UsageService
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
-import app.lawnchair.ui.preferences.components.BatteryOptimizationPrompt
 import app.lawnchair.ui.preferences.components.AppItem
+import app.lawnchair.ui.preferences.components.auditPermissionLabel
+import app.lawnchair.ui.preferences.components.auditPermissionStatus
 import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.controls.TextPreference
 import app.lawnchair.ui.preferences.components.layout.ClickableIcon
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayoutLazyColumn
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import app.lawnchair.ui.preferences.components.layout.preferenceGroupItems
+import app.lawnchair.ui.preferences.components.rememberAuditPermissionRequest
 import app.lawnchair.util.appsState
 import com.android.launcher3.R
 import kotlinx.coroutines.launch
@@ -79,33 +82,20 @@ fun UsageAuditPreferences(
     } else {
         stringResource(id = R.string.usage_audit_serial_missing)
     }
-    val permissionText = if (uiState.hasUsagePermission) {
-        stringResource(id = R.string.usage_audit_usage_permission_granted)
-    } else {
-        stringResource(id = R.string.usage_audit_usage_permission_denied)
+    val requestPermission = rememberAuditPermissionRequest { service.refresh() }
+    val auditPermissions = remember { AuditPermission.required() }
+    val pingModeText = when (uiState.pingMode) {
+        PingMode.IDLE -> stringResource(id = R.string.usage_audit_ping_mode_idle)
+        PingMode.MOVING -> stringResource(id = R.string.usage_audit_ping_mode_moving)
     }
-    val locationPermissionText = if (uiState.hasLocationPermission) {
-        stringResource(id = R.string.usage_audit_ping_location_granted)
-    } else {
-        stringResource(id = R.string.usage_audit_ping_location_denied)
-    }
-    val pingSourceText = when (uiState.pingIntervalSource) {
-        PingIntervalSource.KNOX -> stringResource(id = R.string.usage_audit_ping_source_knox)
-        PingIntervalSource.DEBUG -> stringResource(id = R.string.usage_audit_ping_source_debug)
-        PingIntervalSource.DEFAULT -> stringResource(id = R.string.usage_audit_ping_source_default)
-    }
-    val pingIntervalText = if (uiState.routeActive) {
-        stringResource(id = R.string.usage_audit_ping_interval_route, uiState.pingIntervalMin)
-    } else {
-        stringResource(
-            id = R.string.usage_audit_ping_interval_value,
-            uiState.pingIntervalMin,
-            pingSourceText,
-        )
-    }
+    val syncError = uiState.lastSyncError
     val syncStatus = when {
         !uiState.syncConfigured -> stringResource(id = R.string.usage_audit_sync_missing)
+
+        syncError != null -> stringResource(id = R.string.usage_audit_sync_error, syncError)
+
         uiState.lastSyncAt <= 0L -> stringResource(id = R.string.usage_audit_sync_never)
+
         else -> stringResource(
             id = R.string.usage_audit_sync_ready,
             DateUtils.getRelativeTimeSpanString(
@@ -116,15 +106,26 @@ fun UsageAuditPreferences(
         )
     }
 
-    BatteryOptimizationPrompt()
     PreferenceLayoutLazyColumn(
         label = stringResource(id = R.string.usage_audit_label),
         modifier = modifier,
         backArrowVisible = !LocalIsExpandedScreen.current,
     ) {
         preferenceGroupItems(
-            count = 4,
+            items = auditPermissions,
             isFirstChild = true,
+            heading = { stringResource(id = R.string.usage_audit_permissions) },
+            key = { _, permission -> permission.name },
+        ) { _, permission ->
+            ClickablePreference(
+                label = auditPermissionLabel(permission),
+                subtitle = auditPermissionStatus(permission, uiState.isGranted(permission)),
+                onClick = { requestPermission(permission) },
+            )
+        }
+        preferenceGroupItems(
+            count = 3,
+            isFirstChild = false,
             heading = { stringResource(id = R.string.usage_audit_serial) },
         ) { index ->
             when (index) {
@@ -143,27 +144,14 @@ fun UsageAuditPreferences(
                         },
                     )
                 }
+
                 1 -> {
                     PreferenceTemplate(
                         title = { Text(stringResource(id = R.string.usage_audit_model)) },
                         description = { Text(uiState.model) },
                     )
                 }
-                2 -> {
-                    PreferenceTemplate(
-                        title = { Text(stringResource(id = R.string.usage_audit_usage_permission)) },
-                        description = {
-                            Text(
-                                text = permissionText,
-                                color = if (uiState.hasUsagePermission) {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                } else {
-                                    MaterialTheme.colorScheme.error
-                                },
-                            )
-                        },
-                    )
-                }
+
                 else -> {
                     TextPreference(
                         value = uiState.debugOverride,
@@ -181,7 +169,7 @@ fun UsageAuditPreferences(
             }
         }
         preferenceGroupItems(
-            count = 3,
+            count = 2,
             isFirstChild = false,
             heading = { stringResource(id = R.string.usage_audit_screen_time_today) },
         ) { index ->
@@ -192,12 +180,7 @@ fun UsageAuditPreferences(
                         description = { Text(DateUtils.formatElapsedTime(uiState.screenOnMs / 1000)) },
                     )
                 }
-                1 -> {
-                    ClickablePreference(
-                        label = stringResource(id = R.string.usage_audit_open_usage_settings),
-                        onClick = { context.startActivity(service.usageAccessIntent()) },
-                    )
-                }
+
                 else -> {
                     ClickablePreference(
                         label = stringResource(id = R.string.usage_audit_collect_now),
@@ -222,7 +205,7 @@ fun UsageAuditPreferences(
                         description = {
                             Text(
                                 text = syncStatus,
-                                color = if (uiState.syncConfigured) {
+                                color = if (uiState.syncConfigured && syncError == null) {
                                     MaterialTheme.colorScheme.onSurfaceVariant
                                 } else {
                                     MaterialTheme.colorScheme.error
@@ -231,6 +214,7 @@ fun UsageAuditPreferences(
                         },
                     )
                 }
+
                 1 -> {
                     PreferenceTemplate(
                         title = { Text(stringResource(id = R.string.usage_audit_username)) },
@@ -247,6 +231,7 @@ fun UsageAuditPreferences(
                         },
                     )
                 }
+
                 2 -> {
                     ClickablePreference(
                         label = stringResource(id = R.string.usage_audit_sync_now),
@@ -258,6 +243,7 @@ fun UsageAuditPreferences(
                         },
                     )
                 }
+
                 3 -> {
                     TextPreference(
                         value = uiState.debugUsername,
@@ -268,6 +254,7 @@ fun UsageAuditPreferences(
                         },
                     )
                 }
+
                 4 -> {
                     TextPreference(
                         value = uiState.debugApiUrl,
@@ -278,6 +265,7 @@ fun UsageAuditPreferences(
                         },
                     )
                 }
+
                 else -> {
                     TextPreference(
                         value = uiState.debugBootstrap,
@@ -291,59 +279,25 @@ fun UsageAuditPreferences(
             }
         }
         preferenceGroupItems(
-            count = 5,
+            count = 2,
             isFirstChild = false,
             heading = { stringResource(id = R.string.usage_audit_ping_label) },
         ) { index ->
             when (index) {
                 0 -> {
                     PreferenceTemplate(
-                        title = { Text(stringResource(id = R.string.usage_audit_ping_interval)) },
-                        description = { Text(pingIntervalText) },
+                        title = { Text(stringResource(id = R.string.usage_audit_ping_mode)) },
+                        description = { Text(pingModeText) },
                     )
                 }
-                1 -> {
-                    PreferenceTemplate(
-                        title = { Text(stringResource(id = R.string.usage_audit_ping_location_permission)) },
-                        description = {
-                            Text(
-                                text = locationPermissionText,
-                                color = if (uiState.hasLocationPermission) {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                } else {
-                                    MaterialTheme.colorScheme.error
-                                },
-                            )
-                        },
-                    )
-                }
-                2 -> {
-                    ClickablePreference(
-                        label = stringResource(id = R.string.usage_audit_ping_open_location_settings),
-                        onClick = { context.startActivity(service.locationSettingsIntent()) },
-                    )
-                }
-                3 -> {
+
+                else -> {
                     ClickablePreference(
                         label = stringResource(id = R.string.usage_audit_ping_now),
                         onClick = {
                             scope.launch {
                                 service.collectPing()
                             }
-                        },
-                    )
-                }
-                else -> {
-                    TextPreference(
-                        value = uiState.debugPingInterval,
-                        onChange = { value ->
-                            scope.launch {
-                                service.setDebugPingInterval(value)
-                            }
-                        },
-                        label = stringResource(id = R.string.usage_audit_ping_interval_override),
-                        description = { current ->
-                            current.ifBlank { emptyOverride }
                         },
                     )
                 }
@@ -388,7 +342,7 @@ fun UsageAuditPreferences(
                                 ping.latitude,
                                 ping.longitude,
                                 ping.accuracyMeters,
-                                ping.intervalMin,
+                                ping.intervalSec,
                             ),
                         )
                     },

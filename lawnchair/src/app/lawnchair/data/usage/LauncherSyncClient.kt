@@ -11,19 +11,29 @@ object LauncherSyncClient {
     private const val MAX_BATCHES = 20
 
     suspend fun sync(context: Context, dao: UsageDao): Boolean {
+        val store = LauncherAuthStore(context)
         return try {
-            val serial = DeviceSerial.resolve(context) ?: return false
-            val baseUrl = LauncherApiConfig.baseUrl(context) ?: return false
-            val secret = LauncherApiConfig.bootstrapSecret(context) ?: return false
-            val username = LauncherApiConfig.username(context) ?: return false
-            val identity = dao.getIdentity() ?: return false
-            val store = LauncherAuthStore(context)
+            val serial = DeviceSerial.resolve(context) ?: return store.reject("serial unavailable")
+            val baseUrl = LauncherApiConfig.baseUrl(context) ?: return store.reject("API URL unavailable")
+            val secret = LauncherApiConfig.bootstrapSecret(context) ?: return store.reject("bootstrap secret unavailable")
+            val username = LauncherApiConfig.username(context) ?: return store.reject("username unavailable")
+            val identity = dao.getIdentity() ?: return store.reject("device identity not collected yet")
             val api = LauncherApi.create(baseUrl)
             val token = ensureToken(api, store, identity, secret, username) ?: return false
-            pushBatches(api, store, dao, identity, serial, token, secret, username)
-        } catch (_: Exception) {
+            val synced = pushBatches(api, store, dao, identity, serial, token, secret, username)
+            if (synced) {
+                store.clearError()
+            }
+            synced
+        } catch (ex: Exception) {
+            store.saveError("${ex.javaClass.simpleName}: ${ex.message.orEmpty()}")
             false
         }
+    }
+
+    private fun LauncherAuthStore.reject(reason: String): Boolean {
+        saveError(reason)
+        return false
     }
 
     private suspend fun ensureToken(
@@ -56,7 +66,11 @@ object LauncherSyncClient {
                 username = username,
             ),
         )
-        val token = response.token?.takeIf { it.isNotBlank() } ?: return null
+        val token = response.token?.takeIf { it.isNotBlank() }
+        if (token == null) {
+            store.saveError(response.error ?: "register: response without token")
+            return null
+        }
         store.saveToken(identity.tabletId, token)
         return token
     }
@@ -73,24 +87,12 @@ object LauncherSyncClient {
     ): Boolean {
         var currentToken = token
         var pingAfter = store.lastSyncedPingId()
-        var usageOffset = 0
-        var appOffset = 0
-        var usagesDone = false
-        var appsDone = false
         var retriedAuth = false
         val labels = dao.getEnabledWatched().associate { it.packageName to it.label }
 
         repeat(MAX_BATCHES) {
-            val deviceUsages = if (usagesDone) {
-                emptyList()
-            } else {
-                dao.getDeviceUsagesPage(DEVICE_USAGE_BATCH, usageOffset)
-            }
-            val appUsages = if (appsDone) {
-                emptyList()
-            } else {
-                dao.getAppUsagesPage(APP_USAGE_BATCH, appOffset)
-            }
+            val deviceUsages = dao.getPendingDeviceUsages(DEVICE_USAGE_BATCH)
+            val appUsages = dao.getPendingAppUsages(APP_USAGE_BATCH)
             val pings = dao.getPingsAfterId(pingAfter, PING_BATCH)
             if (deviceUsages.isEmpty() && appUsages.isEmpty() && pings.isEmpty()) {
                 store.markSynced(pingAfter)
@@ -124,7 +126,7 @@ object LauncherSyncClient {
                         longitude = ping.longitude,
                         accuracyMeters = ping.accuracyMeters,
                         speedMps = ping.speedMps,
-                        intervalMin = ping.intervalMin,
+                        intervalSec = ping.intervalSec,
                     )
                 },
             )
@@ -132,25 +134,29 @@ object LauncherSyncClient {
             try {
                 api.sync("Bearer $currentToken", body)
             } catch (ex: HttpException) {
-                if (!retriedAuth && ex.code() == 401) {
-                    store.clearToken()
-                    currentToken = register(api, store, identity, secret, username) ?: return false
-                    retriedAuth = true
+                if (retriedAuth || ex.code() != 401) {
+                    return store.reject("sync: HTTP ${ex.code()}")
+                }
+                store.clearToken()
+                currentToken = register(api, store, identity, secret, username) ?: return false
+                retriedAuth = true
+                try {
                     api.sync("Bearer $currentToken", body)
-                } else {
-                    return false
+                } catch (retry: HttpException) {
+                    return store.reject("sync: HTTP ${retry.code()}")
                 }
             }
 
+            deviceUsages.forEach { dao.markDeviceUsageSynced(it.date, it.updatedAt) }
+            appUsages.forEach { dao.markAppUsageSynced(it.date, it.packageName, it.updatedAt) }
             if (pings.isNotEmpty()) {
                 pingAfter = pings.maxOf { it.id }
             }
             store.markSynced(pingAfter)
-            usageOffset += deviceUsages.size
-            appOffset += appUsages.size
-            usagesDone = deviceUsages.size < DEVICE_USAGE_BATCH
-            appsDone = appUsages.size < APP_USAGE_BATCH
-            if (usagesDone && appsDone && pings.size < PING_BATCH) {
+            if (deviceUsages.size < DEVICE_USAGE_BATCH &&
+                appUsages.size < APP_USAGE_BATCH &&
+                pings.size < PING_BATCH
+            ) {
                 return true
             }
         }

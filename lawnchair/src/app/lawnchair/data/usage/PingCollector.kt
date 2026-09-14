@@ -10,23 +10,27 @@ object PingCollector {
         if (DeviceSerial.resolve(context) == null) return false
         if (!LocationPermission.hasFine(context)) return false
         val location = LocationFix.resolve(context) ?: return false
-        persist(context, dao, location)
+        persist(context, dao, location, MovementState.mode(context))
         return true
     }
 
-    suspend fun collectLocation(context: Context, dao: UsageDao, location: Location): Boolean {
+    suspend fun collectLocation(
+        context: Context,
+        dao: UsageDao,
+        location: Location,
+        mode: PingMode,
+    ): Boolean {
         if (DeviceSerial.resolve(context) == null) return false
         if (!LocationPermission.hasFine(context)) return false
         if (!LocationFix.isValid(location)) return false
-        persist(context, dao, location)
+        persist(context, dao, location, mode)
         return true
     }
 
-    private suspend fun persist(context: Context, dao: UsageDao, location: Location) {
-        val intervalMin = PingInterval.resolve(context)
+    private suspend fun persist(context: Context, dao: UsageDao, location: Location, mode: PingMode) {
         val timestamp = if (location.time > 0L) location.time else System.currentTimeMillis()
         val latest = dao.getLatestPing()
-        if (latest != null && timestamp - latest.timestamp < intervalMin * 60_000L) {
+        if (latest != null && timestamp - latest.timestamp < mode.minGapMs) {
             return
         }
         dao.insertPing(
@@ -36,7 +40,7 @@ object PingCollector {
                 longitude = location.longitude,
                 accuracyMeters = if (location.hasAccuracy()) location.accuracy else 0f,
                 speedMps = if (location.hasSpeed()) location.speed else null,
-                intervalMin = intervalMin,
+                intervalSec = mode.intervalSec,
             ),
         )
         dao.prunePings(System.currentTimeMillis() - RETENTION_MS)

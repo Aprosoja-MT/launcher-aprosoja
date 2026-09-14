@@ -31,26 +31,23 @@ import kotlinx.coroutines.launch
 
 class LocationPingService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var activeIntervalMin: Int? = null
+    private var activeMode: PingMode? = null
     private var collectJob: Job? = null
+    private var tracker: MovementTracker? = null
     private val callback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
-            val intervalMin = PingInterval.resolve(this@LocationPingService)
-            if (!LocationPermission.hasFine(this@LocationPingService) ||
-                DeviceSerial.resolve(this@LocationPingService) == null
-            ) {
+            if (!isEligible()) {
                 stopUpdates()
                 stopSelf()
                 return
             }
-            if (activeIntervalMin != intervalMin) {
-                startUpdates(intervalMin)
-                return
-            }
             val location = result.lastLocation ?: return
+            val movement = tracker ?: return
+            movement.onLocation(location)
+            val mode = movement.mode
             val dao = AppDatabase.INSTANCE.get(this@LocationPingService).usageDao()
             scope.launch {
-                PingCollector.collectLocation(this@LocationPingService, dao, location)
+                PingCollector.collectLocation(this@LocationPingService, dao, location, mode)
             }
         }
     }
@@ -82,38 +79,45 @@ class LocationPingService : Service() {
 
     @SuppressLint("MissingPermission")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_STOP) {
+        if (!isEligible()) {
             stopUpdates()
             stopSelf()
             return START_NOT_STICKY
         }
-        val intervalMin = PingInterval.resolve(this)
-        if (!LocationPermission.hasFine(this) ||
-            DeviceSerial.resolve(this) == null
-        ) {
-            stopUpdates()
-            stopSelf()
-            return START_NOT_STICKY
+        val movement = tracker ?: MovementTracker(this, scope, ::onModeChanged).also {
+            tracker = it
+            it.start()
         }
-        startUpdates(intervalMin)
+        startUpdates(movement.mode)
         startCollectLoop()
         return START_STICKY
     }
 
+    private fun isEligible(): Boolean {
+        return LocationPermission.hasFine(this) && DeviceSerial.resolve(this) != null
+    }
+
+    private fun onModeChanged(mode: PingMode) {
+        startUpdates(mode)
+    }
+
     @SuppressLint("MissingPermission")
-    private fun startUpdates(intervalMin: Int) {
-        if (activeIntervalMin == intervalMin) return
+    private fun startUpdates(mode: PingMode) {
+        if (activeMode == mode) return
         val client = LocationServices.getFusedLocationProviderClient(this)
         client.removeLocationUpdates(callback)
-        val intervalMs = intervalMin * 60_000L
-        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, intervalMs)
-            .setMinUpdateIntervalMillis(intervalMs)
+        val priority = when (mode) {
+            PingMode.IDLE -> Priority.PRIORITY_BALANCED_POWER_ACCURACY
+            PingMode.MOVING -> Priority.PRIORITY_HIGH_ACCURACY
+        }
+        val request = LocationRequest.Builder(priority, mode.intervalMs)
+            .setMinUpdateIntervalMillis(mode.intervalMs)
             .build()
         try {
             client.requestLocationUpdates(request, callback, Looper.getMainLooper())
-            activeIntervalMin = intervalMin
+            activeMode = mode
         } catch (_: Exception) {
-            activeIntervalMin = null
+            activeMode = null
             stopSelf()
         }
     }
@@ -125,15 +129,17 @@ class LocationPingService : Service() {
             while (isActive) {
                 service.collectToday()
                 LauncherSyncWorker.enqueueOnce(this@LocationPingService)
-                delay(15 * 60_000L)
+                delay(PingMode.IDLE.intervalMs)
             }
         }
     }
 
     private fun stopUpdates() {
-        activeIntervalMin = null
+        activeMode = null
         collectJob?.cancel()
         collectJob = null
+        tracker?.stop()
+        tracker = null
         try {
             LocationServices.getFusedLocationProviderClient(this).removeLocationUpdates(callback)
         } catch (_: Exception) {
@@ -149,7 +155,6 @@ class LocationPingService : Service() {
     companion object {
         private const val CHANNEL_ID = "location_ping"
         private const val NOTIFICATION_ID = 2101
-        private const val ACTION_STOP = "app.lawnchair.data.usage.STOP_LOCATION_PING"
 
         fun start(context: Context) {
             val app = context.applicationContext
@@ -161,7 +166,7 @@ class LocationPingService : Service() {
 
         fun stop(context: Context) {
             val app = context.applicationContext
-            app.stopService(Intent(app, LocationPingService::class.java).setAction(ACTION_STOP))
+            app.stopService(Intent(app, LocationPingService::class.java))
         }
     }
 }

@@ -15,5 +15,5 @@ data class LocationPing(
     val longitude: Double,
     val accuracyMeters: Float,
     val speedMps: Float?,
-    val intervalMin: Int,
+    val intervalSec: Int,
 )

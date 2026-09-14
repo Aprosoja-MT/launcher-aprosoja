@@ -28,7 +28,17 @@ object UsageCollector {
         val date = UsageDates.today()
         val events = usageStatsManager.queryEvents(start, now)
         val screenOnMs = screenOnDurationMs(events, start, now)
-        dao.upsertDeviceUsage(DailyDeviceUsage(date = date, screenOnMs = screenOnMs))
+        val existingDevice = dao.getDeviceUsage(date)
+        if (existingDevice == null || existingDevice.screenOnMs != screenOnMs) {
+            dao.upsertDeviceUsage(
+                DailyDeviceUsage(
+                    date = date,
+                    screenOnMs = screenOnMs,
+                    updatedAt = now,
+                    syncedAt = existingDevice?.syncedAt ?: 0L,
+                ),
+            )
+        }
 
         val watched = dao.getEnabledWatched()
         if (watched.isNotEmpty()) {
@@ -36,12 +46,23 @@ object UsageCollector {
             val foreground = usageStatsManager.queryAndAggregateUsageStats(start, now)
             for (app in watched) {
                 val stats = foreground[app.packageName]
+                val openCount = openCounts[app.packageName] ?: 0
+                val foregroundMs = stats?.totalTimeInForeground ?: 0L
+                val existingApp = dao.getAppUsage(date, app.packageName)
+                if (existingApp != null &&
+                    existingApp.openCount == openCount &&
+                    existingApp.foregroundMs == foregroundMs
+                ) {
+                    continue
+                }
                 dao.upsertAppUsage(
                     DailyAppUsage(
                         date = date,
                         packageName = app.packageName,
-                        openCount = openCounts[app.packageName] ?: 0,
-                        foregroundMs = stats?.totalTimeInForeground ?: 0L,
+                        openCount = openCount,
+                        foregroundMs = foregroundMs,
+                        updatedAt = now,
+                        syncedAt = existingApp?.syncedAt ?: 0L,
                     ),
                 )
             }
@@ -68,6 +89,7 @@ object UsageCollector {
                 UsageEvents.Event.SCREEN_INTERACTIVE -> {
                     onSince = event.timeStamp
                 }
+
                 UsageEvents.Event.SCREEN_NON_INTERACTIVE -> {
                     val from = onSince ?: start
                     if (event.timeStamp > from) {

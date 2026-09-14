@@ -35,7 +35,7 @@ import kotlinx.coroutines.runBlocking
         DailyAppUsage::class,
         LocationPing::class,
     ],
-    version = 5,
+    version = 6,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -177,6 +177,54 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `location_pings_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `timestamp` INTEGER NOT NULL,
+                        `latitude` REAL NOT NULL,
+                        `longitude` REAL NOT NULL,
+                        `accuracyMeters` REAL NOT NULL,
+                        `speedMps` REAL,
+                        `intervalSec` INTEGER NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                database.execSQL(
+                    """
+                    INSERT INTO `location_pings_new` (
+                        `id`, `timestamp`, `latitude`, `longitude`, `accuracyMeters`, `speedMps`, `intervalSec`
+                    )
+                    SELECT `id`, `timestamp`, `latitude`, `longitude`, `accuracyMeters`, `speedMps`, `intervalMin` * 60
+                    FROM `location_pings`
+                    """.trimIndent(),
+                )
+                database.execSQL("DROP TABLE `location_pings`")
+                database.execSQL("ALTER TABLE `location_pings_new` RENAME TO `location_pings`")
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_location_pings_timestamp` ON `location_pings` (`timestamp`)",
+                )
+
+                database.execSQL(
+                    "ALTER TABLE `daily_device_usage` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0",
+                )
+                database.execSQL(
+                    "ALTER TABLE `daily_device_usage` ADD COLUMN `syncedAt` INTEGER NOT NULL DEFAULT 0",
+                )
+                database.execSQL("UPDATE `daily_device_usage` SET `updatedAt` = 1")
+
+                database.execSQL(
+                    "ALTER TABLE `daily_app_usage` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0",
+                )
+                database.execSQL(
+                    "ALTER TABLE `daily_app_usage` ADD COLUMN `syncedAt` INTEGER NOT NULL DEFAULT 0",
+                )
+                database.execSQL("UPDATE `daily_app_usage` SET `updatedAt` = 1")
+            }
+        }
+
         val INSTANCE = MainThreadInitializedObject { context ->
             Room.databaseBuilder(
                 context,
@@ -186,6 +234,7 @@ abstract class AppDatabase : RoomDatabase() {
                 .addMigrations(MIGRATION_2_3)
                 .addMigrations(MIGRATION_3_4)
                 .addMigrations(MIGRATION_4_5)
+                .addMigrations(MIGRATION_5_6)
                 .build()
         }
     }

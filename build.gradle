@@ -140,14 +140,13 @@ final def buildCommit = providers.exec {
 }.standardOutput.asText.get().trim()
 
 final def ciBuild = System.getenv("CI") == "true"
-final def ciRef = System.getenv("GITHUB_REF") ?: ""
 final def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
-final def isReleaseBuild = ciBuild && ciRef.contains("beta")
 final def devReleaseName = ciBuild ? "Dev.(#${ciRunNumber})" : "Dev.(${buildCommit})"
 final def version = "1"
 final def releaseName = "Initial"
-final def versionDisplayName = "${version}.${isReleaseBuild ? releaseName : devReleaseName}"
-final def majorVersion = versionDisplayName.split("\\.")[0]
+final def devVersionName = "${version}.${devReleaseName}"
+final def releaseVersionName = "${version}.${releaseName}"
+final def majorVersion = version
 
 final def quickstepMinSdk = "29"
 final def quickstepMaxSdk = "35"
@@ -156,9 +155,9 @@ android {
     namespace "com.android.launcher3"
     defaultConfig {
         applicationId "br.com.aprosoja.launcher"
-        versionCode 1_00_00_00
-        versionName "${versionDisplayName}"
-        buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${versionDisplayName}\""
+        versionCode 1_00_00_05
+        versionName releaseVersionName
+        buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${releaseVersionName}\""
         buildConfigField "String", "MAJOR_VERSION", "\"${majorVersion}\""
         buildConfigField "String", "COMMIT_HASH", "\"${buildCommit}\""
         buildConfigField "boolean", "ENABLE_AUTO_INSTALLS_LAYOUT", "false"
@@ -170,8 +169,9 @@ android {
     }
 
     applicationVariants.configureEach { variant ->
+        def variantVersionName = variant.buildType.name == "debug" ? devVersionName : releaseVersionName
         variant.outputs.configureEach {
-            outputFileName = "AproLauncher.${variant.versionName}.${variant.buildType.name}.apk"
+            outputFileName = "AproLauncher.${variantVersionName}.${variant.buildType.name}.apk"
         }
     }
 
@@ -233,10 +233,12 @@ android {
         debug {
             applicationIdSuffix ".debug"
             resValue("string", "derived_app_name", "Apro Launcher (Debug)")
+            buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${devVersionName}\""
         }
 
         release {
             resValue("string", "derived_app_name", "Apro Launcher")
+            buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${releaseVersionName}\""
             minifyEnabled true
             shrinkResources true
             proguardFiles proguardFilesFromAosp + "proguard.pro"
@@ -300,6 +302,15 @@ android {
             res.srcDirs = ['quickstep/res', 'quickstep/recents_ui_overrides/res']
             java.srcDirs = ['quickstep/src', 'quickstep/recents_ui_overrides/src']
             manifest.srcFile "quickstep/AndroidManifest.xml"
+        }
+    }
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        def variantVersionName = variant.buildType == "debug" ? devVersionName : releaseVersionName
+        variant.outputs.forEach { output ->
+            output.versionName.set(variantVersionName)
         }
     }
 }
@@ -449,4 +460,32 @@ licensee {
 
     bundleAndroidAsset = true
     androidAssetReportPath = 'licenses.json'
+}
+
+// -----------------------------------------------------------------------------
+// Atalhos de build: nomes curtos para os comandos de assemble/install mais usados
+// (o nome completo da variante é "lawnWithQuickstep<BuildType>", difícil de lembrar)
+// -----------------------------------------------------------------------------
+tasks.register("debug") {
+    group = "build"
+    description = "Gera o APK de debug (atalho para assembleLawnWithQuickstepDebug)"
+    dependsOn "assembleLawnWithQuickstepDebug"
+}
+
+tasks.register("release") {
+    group = "build"
+    description = "Gera o APK de release (atalho para assembleLawnWithQuickstepRelease)"
+    dependsOn "assembleLawnWithQuickstepRelease"
+}
+
+tasks.register("installDebug") {
+    group = "install"
+    description = "Instala a build de debug no dispositivo/emulador conectado (atalho para installLawnWithQuickstepDebug)"
+    dependsOn "installLawnWithQuickstepDebug"
+}
+
+tasks.register("installRelease") {
+    group = "install"
+    description = "Instala a build de release no dispositivo/emulador conectado (atalho para installLawnWithQuickstepRelease)"
+    dependsOn "installLawnWithQuickstepRelease"
 }

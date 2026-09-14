@@ -46,11 +46,28 @@ interface UsageDao {
     @Query("SELECT * FROM daily_app_usage WHERE date = :date")
     fun observeAppUsage(date: String): Flow<List<DailyAppUsage>>
 
-    @Query("SELECT * FROM daily_device_usage ORDER BY date ASC LIMIT :limit OFFSET :offset")
-    suspend fun getDeviceUsagesPage(limit: Int, offset: Int): List<DailyDeviceUsage>
+    @Query("SELECT * FROM daily_device_usage WHERE date = :date")
+    suspend fun getDeviceUsage(date: String): DailyDeviceUsage?
 
-    @Query("SELECT * FROM daily_app_usage ORDER BY date ASC, packageName ASC LIMIT :limit OFFSET :offset")
-    suspend fun getAppUsagesPage(limit: Int, offset: Int): List<DailyAppUsage>
+    @Query("SELECT * FROM daily_app_usage WHERE date = :date AND packageName = :packageName")
+    suspend fun getAppUsage(date: String, packageName: String): DailyAppUsage?
+
+    @Query("SELECT * FROM daily_device_usage WHERE updatedAt > syncedAt ORDER BY date ASC LIMIT :limit")
+    suspend fun getPendingDeviceUsages(limit: Int): List<DailyDeviceUsage>
+
+    @Query(
+        "SELECT * FROM daily_app_usage WHERE updatedAt > syncedAt ORDER BY date ASC, packageName ASC LIMIT :limit",
+    )
+    suspend fun getPendingAppUsages(limit: Int): List<DailyAppUsage>
+
+    @Query("UPDATE daily_device_usage SET syncedAt = :updatedAt WHERE date = :date AND updatedAt = :updatedAt")
+    suspend fun markDeviceUsageSynced(date: String, updatedAt: Long)
+
+    @Query(
+        "UPDATE daily_app_usage SET syncedAt = :updatedAt " +
+            "WHERE date = :date AND packageName = :packageName AND updatedAt = :updatedAt",
+    )
+    suspend fun markAppUsageSynced(date: String, packageName: String, updatedAt: Long)
 
     @Query("SELECT * FROM location_pings WHERE id > :afterId ORDER BY id ASC LIMIT :limit")
     suspend fun getPingsAfterId(afterId: Long, limit: Int): List<LocationPing>

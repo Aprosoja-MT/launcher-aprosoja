@@ -7,12 +7,6 @@
         android:restrictionType="string"
         android:defaultValue="" />
     <restriction
-        android:key="ping_interval_min"
-        android:title="@string/usage_audit_restriction_ping_interval_title"
-        android:description="@string/usage_audit_restriction_ping_interval_description"
-        android:restrictionType="integer"
-        android:defaultValue="15" />
-    <restriction
         android:key="watched_packages"
         android:title="@string/usage_audit_restriction_watched_title"
         android:description="@string/usage_audit_restriction_watched_description"

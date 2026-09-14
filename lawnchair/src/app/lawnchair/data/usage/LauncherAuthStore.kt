@@ -13,6 +13,20 @@ class LauncherAuthStore(context: Context) {
 
     fun lastSyncAt(): Long = prefs.getLong(LAST_SYNC_AT, 0L)
 
+    fun lastError(): String? = prefs.getString(LAST_ERROR, null)?.takeIf { it.isNotBlank() }
+
+    fun saveError(message: String) {
+        prefs.edit()
+            .putString(LAST_ERROR, message)
+            .apply()
+    }
+
+    fun clearError() {
+        prefs.edit()
+            .remove(LAST_ERROR)
+            .apply()
+    }
+
     fun saveToken(tabletId: String, token: String) {
         prefs.edit()
             .putString(TABLET_ID, tabletId)
@@ -40,5 +54,6 @@ class LauncherAuthStore(context: Context) {
         private const val TABLET_ID = "launcher_token_tablet"
         private const val LAST_PING_ID = "launcher_last_ping_id"
         private const val LAST_SYNC_AT = "launcher_last_sync_at"
+        private const val LAST_ERROR = "launcher_last_error"
     }
 }
