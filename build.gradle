@@ -139,14 +139,32 @@ final def buildCommit = providers.exec {
     commandLine('git', 'rev-parse', '--short=7', 'HEAD')
 }.standardOutput.asText.get().trim()
 
-final def ciBuild = System.getenv("CI") == "true"
-final def ciRunNumber = System.getenv("GITHUB_RUN_NUMBER") ?: ""
-final def devReleaseName = ciBuild ? "Dev.(#${ciRunNumber})" : "Dev.(${buildCommit})"
-final def version = "1"
-final def releaseName = "Initial"
-final def devVersionName = "${version}.${devReleaseName}"
-final def releaseVersionName = "${version}.${releaseName}"
-final def majorVersion = version
+final def versionFileText = providers.fileContents(
+    rootProject.layout.projectDirectory.file("version.properties")).asText.get()
+final def versionProperties = new Properties()
+versionProperties.load(new StringReader(versionFileText))
+
+final def appVersionName = providers.gradleProperty("appVersionName")
+    .getOrElse(versionProperties.getProperty("versionName")).trim()
+final def appVersionBuild = providers.gradleProperty("appVersionBuild").getOrElse("0").trim().toInteger()
+
+if (!(appVersionName ==~ /\d+\.\d+\.\d+/)) {
+    throw new GradleException("versionName invalido: '${appVersionName}' (esperado MAJOR.MINOR.PATCH)")
+}
+if (appVersionBuild < 0 || appVersionBuild > 99) {
+    throw new GradleException("appVersionBuild invalido: ${appVersionBuild} (esperado 0..99)")
+}
+
+final def versionParts = appVersionName.tokenize(".")*.toInteger()
+if (versionParts[1] > 99 || versionParts[2] > 99) {
+    throw new GradleException("versionName invalido: '${appVersionName}' (MINOR e PATCH devem ser menores que 100)")
+}
+final def majorVersion = versionParts[0]
+final def appVersionCode = versionParts[0] * 1_000_000 + versionParts[1] * 10_000 + versionParts[2] * 100 + appVersionBuild
+
+final def devSuffix = providers.environmentVariable("GITHUB_RUN_NUMBER").map { "ci.${it}" }.getOrElse(buildCommit)
+final def releaseVersionName = appVersionName
+final def devVersionName = "${appVersionName}-dev.${devSuffix}"
 
 final def quickstepMinSdk = "29"
 final def quickstepMaxSdk = "35"
@@ -155,7 +173,7 @@ android {
     namespace "com.android.launcher3"
     defaultConfig {
         applicationId "br.com.aprosoja.launcher"
-        versionCode 1_00_00_06
+        versionCode appVersionCode
         versionName releaseVersionName
         buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${releaseVersionName}\""
         buildConfigField "String", "MAJOR_VERSION", "\"${majorVersion}\""
@@ -171,7 +189,7 @@ android {
     applicationVariants.configureEach { variant ->
         def variantVersionName = variant.buildType.name == "debug" ? devVersionName : releaseVersionName
         variant.outputs.configureEach {
-            outputFileName = "AproLauncher.${variantVersionName}.${variant.buildType.name}.apk"
+            outputFileName = "AproLauncher-${variantVersionName}-${variant.buildType.name}.apk"
         }
     }
 

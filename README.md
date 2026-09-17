@@ -1,7 +1,8 @@
 # Lawnchair 15
 
-[![Build debug APK](https://github.com/LawnchairLauncher/lawnchair/actions/workflows/ci.yml/badge.svg)](https://github.com/LawnchairLauncher/lawnchair/actions/workflows/ci.yml)
-[![Build release APK](https://github.com/LawnchairLauncher/lawnchair/actions/workflows/release_update.yml/badge.svg)](https://github.com/LawnchairLauncher/lawnchair/actions/workflows/release_update.yml)
+[![CI](https://github.com/Aprosoja-MT/launcher-aprosoja/actions/workflows/ci.yml/badge.svg)](https://github.com/Aprosoja-MT/launcher-aprosoja/actions/workflows/ci.yml)
+[![Release](https://github.com/Aprosoja-MT/launcher-aprosoja/actions/workflows/release.yml/badge.svg)](https://github.com/Aprosoja-MT/launcher-aprosoja/actions/workflows/release.yml)
+[![Ultima versao](https://img.shields.io/github/v/release/Aprosoja-MT/launcher-aprosoja?label=download&logo=github)](https://github.com/Aprosoja-MT/launcher-aprosoja/releases/latest)
 [![Crowdin](https://badges.crowdin.net/e/188ba69d884418987f0b7f1dd55e3a4e/localized.svg)](https://lawnchair.crowdin.com/lawnchair)
 [![OpenCollective](https://img.shields.io/opencollective/all/lawnchair?label=financial%20contributors&logo=open-collective)](https://opencollective.com/lawnchair)
 [![Telegram](https://img.shields.io/endpoint?url=https%3A%2F%2Ftg.sumanjay.workers.dev%2Flccommunity)](https://t.me/lccommunity)

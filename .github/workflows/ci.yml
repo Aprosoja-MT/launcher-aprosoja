@@ -2,30 +2,34 @@ name: CI
 
 on:
   push:
+    branches:
+      - aprolauncher-dev
+      - 16-dev
     paths-ignore:
       - '.idea/**'
-      - '.gitattributes'
-      - '.github/**.json'
-      - '.gitignore'
-      - '.gitmodules'
+      - '.vscode/**'
+      - 'docs/**'
       - '**.md'
-      - 'LICENSE'
-      - 'NOTICE'
+      - 'LICENSE.txt'
   pull_request:
     paths-ignore:
       - '.idea/**'
-      - '.gitattributes'
-      - '.github/**.json'
-      - '.gitignore'
-      - '.gitmodules'
+      - '.vscode/**'
+      - 'docs/**'
       - '**.md'
-      - 'LICENSE'
-      - 'NOTICE'
+      - 'LICENSE.txt'
   workflow_dispatch:
-  workflow_call:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  build-debug-apk:
+  estilo:
+    name: Estilo de codigo
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -33,42 +37,27 @@ jobs:
           submodules: true
       - uses: actions/setup-java@v5
         with:
-          distribution: 'zulu'
-          java-version: 21
-      - uses: gradle/actions/setup-gradle@v5
-      - name: Build APK
-        run: ./gradlew assembleLawnWithQuickstepDebug
-      - name: Upload artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: assembleLawnWithQuickstepDebug
-          path: build/outputs/apk/**/*.apk
-
-  check-style:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
-      - uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
+          distribution: zulu
           java-version: 21
       - uses: gradle/actions/setup-gradle@v5
       - run: ./gradlew spotlessCheck
 
-  final-status:
-    needs:
-      - build-debug-apk
-      - check-style
-    runs-on: ubuntu-slim
-    if: always()
+  apk-debug:
+    name: APK de debug
+    runs-on: ubuntu-latest
     steps:
-      - name: Check
-        run: |
-          results=$(tr -d '\n' <<< '${{ toJSON(needs.*.result) }}')
-          if ! grep -q -v -E '(failure|cancelled)' <<< "$results"; then
-            echo "One or more required jobs failed"
-            exit 1
-          fi
-          echo "All required jobs completed successfully."
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v5
+      - run: ./gradlew assembleLawnWithQuickstepDebug
+      - uses: actions/upload-artifact@v6
+        with:
+          name: aprolauncher-debug
+          path: build/outputs/apk/lawnWithQuickstep/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14

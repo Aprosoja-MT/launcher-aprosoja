@@ -4,10 +4,8 @@ changelog:
       - bot
     authors:
       - renovate
-      - lawnchair-bot
-      - crowdin-bot
   categories:
-    - title: 🪄 Features & 🐛 Bugfixes
+    - title: 🪄 Funcionalidades e 🐛 correcoes
       labels:
         - '*'
       exclude:
@@ -15,9 +13,9 @@ changelog:
           - dependencies
           - github_actions
           - housekeeping
-    - title: 🧹 Housekeeping
+    - title: 🧹 Manutencao
       labels:
         - housekeeping
-    - title: 🧑‍💻 Dependencies
+    - title: 🧑‍💻 Dependencias
       labels:
         - dependencies
