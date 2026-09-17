@@ -7,10 +7,14 @@ object PingCollector {
     private const val RETENTION_MS = 30L * 24 * 60 * 60 * 1000
 
     suspend fun collectOnce(context: Context, dao: UsageDao): Boolean {
-        if (DeviceSerial.resolve(context) == null) return false
-        if (!LocationPermission.hasFine(context)) return false
+        if (!isCollectable(context)) return false
         val location = LocationFix.resolve(context) ?: return false
-        persist(context, dao, location, MovementState.mode(context))
+        val mode = MovementState.mode(context)
+        val latest = dao.getLatestPing()
+        if (latest != null && LocationFix.timestampOf(location) - latest.timestamp < mode.minGapMs) {
+            return false
+        }
+        persist(context, dao, location, mode)
         return true
     }
 
@@ -20,27 +24,25 @@ object PingCollector {
         location: Location,
         mode: PingMode,
     ): Boolean {
-        if (DeviceSerial.resolve(context) == null) return false
-        if (!LocationPermission.hasFine(context)) return false
+        if (!isCollectable(context)) return false
         if (!LocationFix.isValid(location)) return false
         persist(context, dao, location, mode)
         return true
     }
 
+    private fun isCollectable(context: Context): Boolean {
+        return DeviceSerial.resolve(context) != null && LocationPermission.hasFine(context)
+    }
+
     private suspend fun persist(context: Context, dao: UsageDao, location: Location, mode: PingMode) {
-        val timestamp = if (location.time > 0L) location.time else System.currentTimeMillis()
-        val latest = dao.getLatestPing()
-        if (latest != null && timestamp - latest.timestamp < mode.minGapMs) {
-            return
-        }
         dao.insertPing(
             LocationPing(
-                timestamp = timestamp,
+                timestamp = LocationFix.timestampOf(location),
                 latitude = location.latitude,
                 longitude = location.longitude,
                 accuracyMeters = if (location.hasAccuracy()) location.accuracy else 0f,
                 speedMps = if (location.hasSpeed()) location.speed else null,
-                intervalSec = mode.intervalSec,
+                intervalSec = mode.reportSec,
             ),
         )
         dao.prunePings(System.currentTimeMillis() - RETENTION_MS)

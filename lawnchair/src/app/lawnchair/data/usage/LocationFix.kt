@@ -33,6 +33,10 @@ object LocationFix {
         return location.latitude != 0.0 || location.longitude != 0.0
     }
 
+    fun timestampOf(location: Location): Long {
+        return if (location.time > 0L) location.time else System.currentTimeMillis()
+    }
+
     @SuppressLint("MissingPermission")
     private fun lastKnown(context: Context): Location? {
         return fusedLast(context) ?: managerLast(context)

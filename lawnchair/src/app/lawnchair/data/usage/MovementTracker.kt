@@ -8,14 +8,13 @@ import kotlinx.coroutines.launch
 class MovementTracker(
     context: Context,
     private val scope: CoroutineScope,
-    private val onModeChanged: (PingMode) -> Unit,
+    private val onModeChanged: (PingMode, Location) -> Unit,
 ) {
     private val context = context.applicationContext
     private val detector = MotionDetector(this.context) { onMotionTrigger() }
     private var currentMode = MovementState.mode(this.context)
     private var anchor: Location? = MovementState.anchor(this.context)
-    private var idleCandidate: Location? = null
-    private var idleFixes = 0
+    private var idleCandidate: Location? = MovementState.candidate(this.context)
 
     val mode: PingMode get() = currentMode
 
@@ -56,21 +55,20 @@ class MovementTracker(
             MovementState.setAnchor(context, location)
             return
         }
-        if (current.distanceTo(location) <= PingRules.MOVE_RADIUS_M) return
+        if (current.distanceTo(location) <= departureRadius(location)) return
         enterMoving(location)
     }
 
     private fun evaluateMoving(location: Location) {
         val candidate = idleCandidate
-        if (candidate != null && candidate.distanceTo(location) <= PingRules.MOVE_RADIUS_M) {
-            idleFixes += 1
-            if (idleFixes >= PingRules.IDLE_CONFIRM_FIXES) {
-                enterIdle(candidate)
-            }
+        if (isUnderWay(location) || candidate == null ||
+            candidate.distanceTo(location) > PingRules.IDLE_RADIUS_M
+        ) {
+            setIdleCandidate(location)
             return
         }
-        idleCandidate = location
-        idleFixes = 1
+        if (LocationFix.timestampOf(location) - candidate.time < PingRules.IDLE_CONFIRM_MS) return
+        enterIdle(location)
     }
 
     private fun enterMoving(location: Location) {
@@ -78,21 +76,36 @@ class MovementTracker(
         MovementState.setMode(context, PingMode.MOVING)
         anchor = null
         MovementState.clearAnchor(context)
-        idleCandidate = location
-        idleFixes = 1
+        setIdleCandidate(location)
         detector.stop()
-        onModeChanged(PingMode.MOVING)
+        onModeChanged(PingMode.MOVING, location)
     }
 
     private fun enterIdle(location: Location) {
+        val resting = idleCandidate ?: location
         currentMode = PingMode.IDLE
         MovementState.setMode(context, PingMode.IDLE)
-        anchor = location
-        MovementState.setAnchor(context, location)
+        anchor = resting
+        MovementState.setAnchor(context, resting)
         idleCandidate = null
-        idleFixes = 0
+        MovementState.clearCandidate(context)
         detector.arm()
-        onModeChanged(PingMode.IDLE)
+        onModeChanged(PingMode.IDLE, location)
+    }
+
+    private fun setIdleCandidate(location: Location) {
+        val candidate = Location(location).apply { time = LocationFix.timestampOf(location) }
+        idleCandidate = candidate
+        MovementState.setCandidate(context, candidate)
+    }
+
+    private fun isUnderWay(location: Location): Boolean {
+        return location.hasSpeed() && location.speed >= PingRules.MOVING_SPEED_MPS
+    }
+
+    private fun departureRadius(location: Location): Float {
+        val accuracy = if (location.hasAccuracy()) location.accuracy else 0f
+        return PingRules.MOVE_RADIUS_M + accuracy
     }
 
     private fun isUsable(location: Location): Boolean {

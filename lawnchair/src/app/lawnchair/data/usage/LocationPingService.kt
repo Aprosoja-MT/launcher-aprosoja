@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.location.Location
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
@@ -35,6 +36,7 @@ class LocationPingService : Service() {
     private var activeMode: PingMode? = null
     private var collectJob: Job? = null
     private var tracker: MovementTracker? = null
+    private val sampler = TrackSampler()
     private val callback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
             if (!isEligible()) {
@@ -44,12 +46,11 @@ class LocationPingService : Service() {
             }
             val location = result.lastLocation ?: return
             val movement = tracker ?: return
+            val previous = movement.mode
             movement.onLocation(location)
-            val mode = movement.mode
-            val dao = AppDatabase.INSTANCE.get(this@LocationPingService).usageDao()
-            scope.launch {
-                PingCollector.collectLocation(this@LocationPingService, dao, location, mode)
-            }
+            if (movement.mode != previous) return
+            if (!sampler.shouldRecord(location, previous)) return
+            record(location, previous)
         }
     }
 
@@ -98,8 +99,17 @@ class LocationPingService : Service() {
         return LocationPermission.hasFine(this) && DeviceSerial.resolve(this) != null
     }
 
-    private fun onModeChanged(mode: PingMode) {
+    private fun onModeChanged(mode: PingMode, location: Location) {
         startUpdates(mode)
+        record(location, mode)
+    }
+
+    private fun record(location: Location, mode: PingMode) {
+        sampler.accept(location)
+        scope.launch {
+            val dao = AppDatabase.INSTANCE.get(this@LocationPingService).usageDao()
+            PingCollector.collectLocation(this@LocationPingService, dao, location, mode)
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -111,8 +121,8 @@ class LocationPingService : Service() {
             PingMode.IDLE -> Priority.PRIORITY_BALANCED_POWER_ACCURACY
             PingMode.MOVING -> Priority.PRIORITY_HIGH_ACCURACY
         }
-        val request = LocationRequest.Builder(priority, mode.intervalMs)
-            .setMinUpdateIntervalMillis(mode.intervalMs)
+        val request = LocationRequest.Builder(priority, mode.sampleIntervalMs)
+            .setMinUpdateIntervalMillis(mode.sampleIntervalMs)
             .build()
         try {
             client.requestLocationUpdates(request, callback, Looper.getMainLooper())
@@ -136,6 +146,7 @@ class LocationPingService : Service() {
 
     private fun stopUpdates() {
         activeMode = null
+        sampler.reset()
         collectJob?.cancel()
         collectJob = null
         tracker?.stop()
