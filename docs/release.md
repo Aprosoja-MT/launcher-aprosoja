@@ -82,5 +82,6 @@ scripts/bump-version.sh 1.2.0  # define a versao
 
 ## CI
 
-O workflow `CI` roda em pushes para `aprolauncher-dev`/`16-dev` e em pull requests:
-verifica o estilo (`spotlessCheck`) e gera o APK de debug como artefato por 14 dias.
+O workflow `CI` roda em pushes para `aprolauncher-dev` e em pull requests que apontam
+para essa branch: verifica o estilo (`spotlessCheck`) e gera o APK de debug como
+artefato por 14 dias.

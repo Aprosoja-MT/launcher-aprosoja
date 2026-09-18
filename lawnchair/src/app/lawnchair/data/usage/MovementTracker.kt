@@ -29,7 +29,7 @@ class MovementTracker(
     }
 
     fun onLocation(location: Location) {
-        if (!isUsable(location)) return
+        if (!LocationFix.isRecordable(location)) return
         when (currentMode) {
             PingMode.IDLE -> evaluateIdle(location)
             PingMode.MOVING -> evaluateMoving(location)
@@ -106,10 +106,5 @@ class MovementTracker(
     private fun departureRadius(location: Location): Float {
         val accuracy = if (location.hasAccuracy()) location.accuracy else 0f
         return PingRules.MOVE_RADIUS_M + accuracy
-    }
-
-    private fun isUsable(location: Location): Boolean {
-        if (!LocationFix.isValid(location)) return false
-        return !location.hasAccuracy() || location.accuracy <= PingRules.MAX_ACCURACY_M
     }
 }

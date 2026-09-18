@@ -45,6 +45,7 @@ class LocationPingService : Service() {
                 return
             }
             val location = result.lastLocation ?: return
+            if (!LocationFix.isRecordable(location)) return
             val movement = tracker ?: return
             val previous = movement.mode
             movement.onLocation(location)
@@ -123,6 +124,8 @@ class LocationPingService : Service() {
         }
         val request = LocationRequest.Builder(priority, mode.sampleIntervalMs)
             .setMinUpdateIntervalMillis(mode.sampleIntervalMs)
+            .setMaxUpdateDelayMillis(0)
+            .setWaitForAccurateLocation(mode == PingMode.MOVING)
             .build()
         try {
             client.requestLocationUpdates(request, callback, Looper.getMainLooper())

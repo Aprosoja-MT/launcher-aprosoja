@@ -13,6 +13,7 @@ class LocationPingWorker(
     params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
+        PingScheduler.sync(applicationContext)
         UsageService.INSTANCE.get(applicationContext).collectPing()
         return Result.success()
     }

@@ -5,7 +5,7 @@ enum class PingMode(
     val reportSec: Int,
     val minGapSec: Int,
 ) {
-    IDLE(300, 1800, 1500),
+    IDLE(60, 1800, 840),
     MOVING(5, 30, 4),
     ;
 

@@ -14,23 +14,26 @@ import java.util.concurrent.TimeUnit
 object LocationFix {
     private const val TIMEOUT_SEC = 15L
     private const val LAST_KNOWN_MAX_AGE_MS = 5 * 60 * 1000L
-    private const val LAST_KNOWN_MAX_ACCURACY_M = 200f
 
     @SuppressLint("MissingPermission")
     fun resolve(context: Context): Location? {
         val fresh = fusedCurrent(context)
-        if (fresh != null && isValid(fresh)) return fresh
+        if (fresh != null && isRecordable(fresh)) return fresh
         val last = lastKnown(context) ?: return null
-        if (!isValid(last)) return null
+        if (!isRecordable(last)) return null
         val age = System.currentTimeMillis() - last.time
         if (age > LAST_KNOWN_MAX_AGE_MS) return null
-        if (last.hasAccuracy() && last.accuracy > LAST_KNOWN_MAX_ACCURACY_M) return null
         return last
     }
 
     fun isValid(location: Location): Boolean {
         if (!location.latitude.isFinite() || !location.longitude.isFinite()) return false
         return location.latitude != 0.0 || location.longitude != 0.0
+    }
+
+    fun isRecordable(location: Location): Boolean {
+        if (!isValid(location)) return false
+        return !location.hasAccuracy() || location.accuracy <= PingRules.MAX_ACCURACY_M
     }
 
     fun timestampOf(location: Location): Long {

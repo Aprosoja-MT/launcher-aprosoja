@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - aprolauncher-dev
-      - 16-dev
     paths-ignore:
       - '.idea/**'
       - '.vscode/**'
@@ -12,6 +11,8 @@ on:
       - '**.md'
       - 'LICENSE.txt'
   pull_request:
+    branches:
+      - aprolauncher-dev
     paths-ignore:
       - '.idea/**'
       - '.vscode/**'
