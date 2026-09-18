@@ -6,19 +6,34 @@ import java.util.Locale
 object UsageDates {
     fun today(): String = format(Calendar.getInstance())
 
-    fun startOfDayMillis(): Long {
+    fun recentDays(count: Int, now: Long): List<UsageDayWindow> {
         val calendar = Calendar.getInstance()
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        return calendar.timeInMillis
+        calendar.timeInMillis = now
+        startOfDay(calendar)
+        calendar.add(Calendar.DAY_OF_YEAR, -(count - 1))
+        val windows = mutableListOf<UsageDayWindow>()
+        repeat(count) {
+            startOfDay(calendar)
+            val startMs = calendar.timeInMillis
+            val date = format(calendar)
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+            startOfDay(calendar)
+            windows += UsageDayWindow(date = date, startMs = startMs, endMs = calendar.timeInMillis)
+        }
+        return windows
     }
 
     fun pruneCutoff(): String {
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.DAY_OF_YEAR, -30)
         return format(calendar)
+    }
+
+    private fun startOfDay(calendar: Calendar) {
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
     }
 
     private fun format(calendar: Calendar): String {

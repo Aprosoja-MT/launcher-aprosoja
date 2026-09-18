@@ -1,12 +1,14 @@
 package app.lawnchair.data.usage
 
-import android.app.usage.UsageEvents
-import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.os.Build
+import android.os.PowerManager
 import androidx.core.content.getSystemService
 
 object UsageCollector {
+    private const val RECOMPUTE_DAYS = 2
+    private const val LOOKBACK_MS = 24 * 60 * 60 * 1000L
+
     suspend fun collectToday(context: Context, dao: UsageDao): Boolean {
         WatchedPackages.sync(context, dao)
         val serial = DeviceSerial.resolve(context) ?: return false
@@ -22,50 +24,17 @@ object UsageCollector {
         }
         if (!UsagePermission.hasAccess(context)) return false
 
-        val usageStatsManager = context.getSystemService<UsageStatsManager>() ?: return false
-        val start = UsageDates.startOfDayMillis()
         val now = System.currentTimeMillis()
-        val date = UsageDates.today()
-        val events = usageStatsManager.queryEvents(start, now)
-        val screenOnMs = screenOnDurationMs(events, start, now)
-        val existingDevice = dao.getDeviceUsage(date)
-        if (existingDevice == null || existingDevice.screenOnMs != screenOnMs) {
-            dao.upsertDeviceUsage(
-                DailyDeviceUsage(
-                    date = date,
-                    screenOnMs = screenOnMs,
-                    updatedAt = now,
-                    syncedAt = existingDevice?.syncedAt ?: 0L,
-                ),
-            )
-        }
+        val days = UsageDates.recentDays(RECOMPUTE_DAYS, now)
+        val windowStart = days.first().startMs - LOOKBACK_MS
+        val events = UsageEventReader.read(context, windowStart, now) ?: return false
+        val screenInteractive = context.getSystemService<PowerManager>()?.isInteractive
+        val sweeps = UsageSweep.run(events, days, windowStart, now, screenInteractive)
 
         val watched = dao.getWatched()
-        if (watched.isNotEmpty()) {
-            val openCounts = openCounts(usageStatsManager, start, now, watched.map { it.packageName }.toSet())
-            val foreground = usageStatsManager.queryAndAggregateUsageStats(start, now)
-            for (app in watched) {
-                val stats = foreground[app.packageName]
-                val openCount = openCounts[app.packageName] ?: 0
-                val foregroundMs = stats?.totalTimeInForeground ?: 0L
-                val existingApp = dao.getAppUsage(date, app.packageName)
-                if (existingApp != null &&
-                    existingApp.openCount == openCount &&
-                    existingApp.foregroundMs == foregroundMs
-                ) {
-                    continue
-                }
-                dao.upsertAppUsage(
-                    DailyAppUsage(
-                        date = date,
-                        packageName = app.packageName,
-                        openCount = openCount,
-                        foregroundMs = foregroundMs,
-                        updatedAt = now,
-                        syncedAt = existingApp?.syncedAt ?: 0L,
-                    ),
-                )
-            }
+        for (sweep in sweeps) {
+            if (!sweep.shouldPersist(hasStaleAppUsage(dao, sweep.date, watched))) continue
+            persist(dao, sweep, watched, now)
         }
 
         val cutoff = UsageDates.pruneCutoff()
@@ -74,58 +43,54 @@ object UsageCollector {
         return true
     }
 
-    private fun screenOnDurationMs(
-        events: UsageEvents,
-        start: Long,
-        now: Long,
-    ): Long {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return 0L
-        val event = UsageEvents.Event()
-        var onSince: Long? = null
-        var total = 0L
-        while (events.hasNextEvent()) {
-            events.getNextEvent(event)
-            when (event.eventType) {
-                UsageEvents.Event.SCREEN_INTERACTIVE -> {
-                    onSince = event.timeStamp
-                }
-
-                UsageEvents.Event.SCREEN_NON_INTERACTIVE -> {
-                    val from = onSince ?: start
-                    if (event.timeStamp > from) {
-                        total += event.timeStamp - from
-                    }
-                    onSince = null
-                }
-            }
+    private suspend fun hasStaleAppUsage(
+        dao: UsageDao,
+        date: String,
+        watched: List<WatchedApp>,
+    ): Boolean {
+        return watched.any { app ->
+            (dao.getAppUsage(date, app.packageName)?.foregroundMs ?: 0L) > 0L
         }
-        if (onSince != null && now > onSince) {
-            total += now - onSince
-        }
-        return total
     }
 
-    private fun openCounts(
-        usageStatsManager: UsageStatsManager,
-        start: Long,
+    private suspend fun persist(
+        dao: UsageDao,
+        sweep: UsageDaySweep,
+        watched: List<WatchedApp>,
         now: Long,
-        packages: Set<String>,
-    ): Map<String, Int> {
-        val events = usageStatsManager.queryEvents(start, now)
-        val event = UsageEvents.Event()
-        val counts = mutableMapOf<String, Int>()
-        val resumeType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            UsageEvents.Event.ACTIVITY_RESUMED
-        } else {
-            UsageEvents.Event.MOVE_TO_FOREGROUND
+    ) {
+        val existingDevice = dao.getDeviceUsage(sweep.date)
+        if (existingDevice == null || existingDevice.screenOnMs != sweep.screenOnMs) {
+            dao.upsertDeviceUsage(
+                DailyDeviceUsage(
+                    date = sweep.date,
+                    screenOnMs = sweep.screenOnMs,
+                    updatedAt = now,
+                    syncedAt = existingDevice?.syncedAt ?: 0L,
+                ),
+            )
         }
-        while (events.hasNextEvent()) {
-            events.getNextEvent(event)
-            if (event.eventType != resumeType) continue
-            val packageName = event.packageName ?: continue
-            if (packageName !in packages) continue
-            counts[packageName] = (counts[packageName] ?: 0) + 1
+        for (app in watched) {
+            val usage = sweep.packages[app.packageName]
+            val openCount = usage?.openCount ?: 0
+            val foregroundMs = usage?.foregroundMs ?: 0L
+            val existingApp = dao.getAppUsage(sweep.date, app.packageName)
+            if (existingApp != null &&
+                existingApp.openCount == openCount &&
+                existingApp.foregroundMs == foregroundMs
+            ) {
+                continue
+            }
+            dao.upsertAppUsage(
+                DailyAppUsage(
+                    date = sweep.date,
+                    packageName = app.packageName,
+                    openCount = openCount,
+                    foregroundMs = foregroundMs,
+                    updatedAt = now,
+                    syncedAt = existingApp?.syncedAt ?: 0L,
+                ),
+            )
         }
-        return counts
     }
 }

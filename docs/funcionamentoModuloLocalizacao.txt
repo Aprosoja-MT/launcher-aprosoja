@@ -1,0 +1,73 @@
+1. O tablet tem dois estados
+
+  PARADO e EM DESLOCAMENTO. O estado fica salvo em disco, então sobrevive a reinício do app.
+
+  ┌───────────────────────┬────────────────────────────┬────────────────────────────────────────────────────┐
+  │                       │           PARADO           │                  EM DESLOCAMENTO                   │
+  ├───────────────────────┼────────────────────────────┼────────────────────────────────────────────────────┤
+  │ Consulta o GPS a cada │ 60 s (economia de bateria) │ 5 s (alta precisão)                                │
+  ├───────────────────────┼────────────────────────────┼────────────────────────────────────────────────────┤
+  │ Grava ping a cada     │ ~15 min                    │ ~30 s, ou antes se andar 60 m / fizer curva de 12° │
+  ├───────────────────────┼────────────────────────────┼────────────────────────────────────────────────────┤
+  │ intervalSec gravado   │ 1800                       │ 30                                                 │
+  └───────────────────────┴────────────────────────────┴────────────────────────────────────────────────────┘
+
+  Esse intervalSec é a etiqueta que o servidor lê depois para saber se o ping foi tirado parado ou andando.
+
+  2. Como nasce um deslocamento
+
+  Estando PARADO, o tablet guarda uma âncora (o ponto onde parou). A cada 60 s ele compara a posição com essa âncora. Quando se afasta mais de 50 m + a margem de erro do fix, vira EM DESLOCAMENTO na hora: grava o ponto, muda o GPS para 5 s e começa a traçar.
+
+  Existe um atalho: enquanto PARADO, o sensor de movimento significativo do Android fica armado. Se ele disparar, o tablet busca a posição imediatamente sem esperar os 60 s. Em tablet que não tem esse sensor (comum nos baratos), os 60 s garantem o mesmo resultado, só um pouco depois.
+
+  Pior caso de atraso na partida: 60 s. Antes eram 5 minutos — a ~80 km/h, quase 7 km de percurso que simplesmente não apareciam no mapa.
+
+  3. Como nasce uma parada
+
+  Estando EM DESLOCAMENTO, o tablet fica testando um candidato a ponto de parada. Toda vez que a velocidade passa de 7 km/h ou ele se afasta mais de 40 m do candidato, o candidato é renovado.
+
+  Se ficar 7 minutos seguidos dentro desses 40 m, vira PARADO. O tablet volta o GPS para 60 s e arma o sensor de movimento.
+
+  Os 7 minutos existem para não transformar semáforo, cancela de fazenda e fila em parada.
+
+  4. Parado por horas
+
+  É o caso mais comum e é o mais barato:
+
+  - GPS em modo econômico, consultado a cada 60 s.
+  - Um ping a cada ~15 min, sempre com intervalSec = 1800.
+  - Uma parada de 5 h gera ~20 pings, todos praticamente no mesmo lugar.
+
+  No servidor esses pings viram uma parada só: como estão etiquetados como "parado", o agrupamento usa raio de 150 m em vez de 50 m, o que absorve a deriva natural do GPS de um aparelho imóvel. Sem isso, o tremido do sinal viraria "o tablet andou 80 m" a cada meia hora.
+
+  5. O que o servidor faz ao montar o mapa
+
+  Na ordem, em cima dos pings do dia:
+
+  1. Descarta fix com erro acima de 50 m e coordenada inválida.
+  2. Descarta teleporte — qualquer coisa que implique mais de 216 km/h entre dois pings, sem exceção.
+  3. Corta o dia em trechos quando há buraco: silêncio longo demais ou dois pings a mais de 2 km um do outro. Cada corte vira uma lacuna registrada — e nunca mais é desenhado como linha reta.
+  4. Detecta as paradas dentro de cada trecho (aglomerados de ≥ 5 min).
+  5. Monta os deslocamentos entre as paradas. O fim de um deslocamento é exatamente o começo da parada seguinte, então não sobra buraco nem sobreposição.
+  6. Ajusta na via pelo Google Roads; se algum ponto não encaixar em estrada mapeada, usa a linha crua em vez de entregar um traçado truncado.
+
+  6. Sync com a API
+
+  - Gatilho duplo: todo ping gravado agenda um envio imediato, e um trabalho encadeado reenvia a cada 16 min de qualquer jeito.
+  - Só com rede. Sem internet, o trabalho fica esperando e os pings se acumulam no banco local, que guarda 30 dias. Quando a rede volta, envia tudo em lotes de 500 (até 10 mil pings por rodada).
+  - Não duplica. Cada ping leva um ID gerado no tablet; se o mesmo lote for enviado duas vezes, o servidor reconhece e ignora.
+  - Ponteiro de progresso: o tablet guarda o último ping confirmado, então nunca reenvia o histórico inteiro.
+  - Token: se expirar, ele se registra de novo sozinho e repete o lote, uma vez.
+  - Falha de envio fica gravada e aparece na tela de auditoria do launcher.
+
+  7. Três coisas que ainda não estão perfeitas
+
+  A saída de uma parada longa "rouba" até 15 min do tempo parado. O último ping da parada pode ser de até 15 min antes de o tablet sair. Esse intervalo entra na conta do deslocamento, não da parada. A distância fica certa; só a divisão do tempo é que escorrega.
+
+  Modo soneca do Android pode partir uma parada de madrugada. Se o sistema segurar o trabalho agendado por mais de 1h30 sem nenhum ping, o servidor entende como buraco e quebra a parada em duas. Aparece como duas paradas no mesmo lugar com uma lacuna no meio.
+
+  Consumo de bateria subiu um pouco quando parado, por causa da consulta de 60 s em vez de 5 min. Em tablet que fica no veículo ligado à energia isso não pesa; se algum ficar no bolso o dia todo, vale acompanhar.
+
+  ---
+
+  Vale olhar o dia 17/09 de novo no dashboard: aquele salto de 46 km agora tem que aparecer como lacuna, e a Parada 5 no horário real dela, não colada no fim do deslocamento.

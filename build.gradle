@@ -321,6 +321,10 @@ android {
             java.srcDirs = ['quickstep/src', 'quickstep/recents_ui_overrides/src']
             manifest.srcFile "quickstep/AndroidManifest.xml"
         }
+
+        test {
+            java.srcDirs = ['lawnchair/tests/src']
+        }
     }
 }
 
@@ -440,6 +444,8 @@ dependencies {
     implementation libs.hoko.blur
 
     implementation libs.androidx.window
+
+    testImplementation libs.junit
 }
 
 ksp {
@@ -454,7 +460,7 @@ spotless {
         removeUnusedImports()
     }
     kotlin {
-        target("lawnchair/src/**/*.kt")
+        target("lawnchair/src/**/*.kt", "lawnchair/tests/src/**/*.kt")
         ktlint("1.8.0").customRuleSets([
             libs.composeRules.get().toString()
         ]).editorConfigOverride([
