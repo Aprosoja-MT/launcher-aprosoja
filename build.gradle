@@ -188,8 +188,11 @@ android {
     }
 
     applicationVariants.configureEach { variant ->
-        if (variant.applicationId != "br.com.aprosoja.launcher") {
-            throw new GradleException("applicationId deve ser br.com.aprosoja.launcher (foi '${variant.applicationId}')")
+        def expectedId = variant.buildType.name == "debug"
+            ? "br.com.aprosoja.launcher.debug"
+            : "br.com.aprosoja.launcher"
+        if (variant.applicationId != expectedId) {
+            throw new GradleException("applicationId deve ser ${expectedId} (foi '${variant.applicationId}')")
         }
         def variantVersionName = variant.buildType.name == "debug" ? devVersionName : releaseVersionName
         variant.outputs.configureEach {
@@ -253,6 +256,7 @@ android {
         }
 
         debug {
+            applicationIdSuffix ".debug"
             resValue("string", "derived_app_name", "Apro Launcher (Debug)")
             buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${devVersionName}\""
         }

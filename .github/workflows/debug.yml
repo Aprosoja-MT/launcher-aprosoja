@@ -75,7 +75,7 @@ jobs:
               print("::error::output-metadata.json nao encontrado")
               sys.exit(1)
           data = json.loads(open(files[0], encoding="utf-8").read())
-          expected = "br.com.aprosoja.launcher"
+          expected = "br.com.aprosoja.launcher.debug"
           got = data.get("applicationId")
           print(f"applicationId={got}")
           if got != expected:
