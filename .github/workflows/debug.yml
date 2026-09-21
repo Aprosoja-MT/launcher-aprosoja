@@ -64,7 +64,24 @@ jobs:
           } > keystore.properties
 
       - name: Gerar APK de debug
-        run: ./gradlew assembleLawnWithQuickstepDebug -PappVersionBuild=${{ steps.version.outputs.build }} -PappKeepApplicationId=true
+        run: ./gradlew assembleLawnWithQuickstepDebug -PappVersionBuild=${{ steps.version.outputs.build }}
+
+      - name: Conferir applicationId
+        run: |
+          python3 - <<'PY'
+          import json, glob, sys
+          files = glob.glob("build/outputs/apk/lawnWithQuickstep/debug/output-metadata.json")
+          if not files:
+              print("::error::output-metadata.json nao encontrado")
+              sys.exit(1)
+          data = json.loads(open(files[0], encoding="utf-8").read())
+          expected = "br.com.aprosoja.launcher"
+          got = data.get("applicationId")
+          print(f"applicationId={got}")
+          if got != expected:
+              print(f"::error::applicationId '{got}' != '{expected}'")
+              sys.exit(1)
+          PY
 
       - name: Remover credenciais de assinatura
         if: always()
