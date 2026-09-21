@@ -19,6 +19,20 @@ jobs:
         with:
           submodules: true
 
+      - name: Validar segredos de assinatura
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          for secret in KEYSTORE KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!secret}" ]; then
+              echo "::error::Segredo $secret nao configurado no repositorio (ver docs/release.md)"
+              exit 1
+            fi
+          done
+
       - name: Definir versionCode de rebuild
         id: version
         env:
@@ -34,12 +48,31 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v5
 
-      - name: Gerar APK de debug
-        run: ./gradlew assembleLawnWithQuickstepDebug -PappVersionBuild=${{ steps.version.outputs.build }}
+      - name: Configurar assinatura
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/keystore.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/keystore.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > keystore.properties
+
+      - name: Gerar APK assinado
+        run: ./gradlew assembleLawnWithQuickstepRelease -PappVersionBuild=${{ steps.version.outputs.build }}
+
+      - name: Remover credenciais de assinatura
+        if: always()
+        run: rm -f keystore.properties "$RUNNER_TEMP/keystore.jks"
 
       - uses: actions/upload-artifact@v6
         with:
           name: aprolauncher-debug
-          path: build/outputs/apk/lawnWithQuickstep/debug/*.apk
+          path: build/outputs/apk/lawnWithQuickstep/release/*.apk
           if-no-files-found: error
           retention-days: 14
