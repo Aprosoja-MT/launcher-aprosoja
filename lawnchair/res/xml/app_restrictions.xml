@@ -30,4 +30,82 @@
         android:description="@string/usage_audit_restriction_username_description"
         android:restrictionType="string"
         android:defaultValue="" />
+    <restriction
+        android:key="knox_group_name"
+        android:title="@string/usage_audit_restriction_group_name_title"
+        android:description="@string/usage_audit_restriction_group_name_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="knox_site"
+        android:title="@string/usage_audit_restriction_site_title"
+        android:description="@string/usage_audit_restriction_site_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="knox_site_code"
+        android:title="@string/usage_audit_restriction_site_code_title"
+        android:description="@string/usage_audit_restriction_site_code_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="knox_department"
+        android:title="@string/usage_audit_restriction_department_title"
+        android:description="@string/usage_audit_restriction_department_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="knox_device_tag"
+        android:title="@string/usage_audit_restriction_device_tag_title"
+        android:description="@string/usage_audit_restriction_device_tag_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="knox_user_tag"
+        android:title="@string/usage_audit_restriction_user_tag_title"
+        android:description="@string/usage_audit_restriction_user_tag_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="knox_display_name"
+        android:title="@string/usage_audit_restriction_display_name_title"
+        android:description="@string/usage_audit_restriction_display_name_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="knox_employee_number"
+        android:title="@string/usage_audit_restriction_employee_number_title"
+        android:description="@string/usage_audit_restriction_employee_number_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="knox_phone_number"
+        android:title="@string/usage_audit_restriction_phone_number_title"
+        android:description="@string/usage_audit_restriction_phone_number_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="knox_imei"
+        android:title="@string/usage_audit_restriction_imei_title"
+        android:description="@string/usage_audit_restriction_imei_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="knox_iccid"
+        android:title="@string/usage_audit_restriction_iccid_title"
+        android:description="@string/usage_audit_restriction_iccid_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="knox_carrier"
+        android:title="@string/usage_audit_restriction_carrier_title"
+        android:description="@string/usage_audit_restriction_carrier_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
+    <restriction
+        android:key="knox_device_name"
+        android:title="@string/usage_audit_restriction_device_name_title"
+        android:description="@string/usage_audit_restriction_device_name_description"
+        android:restrictionType="string"
+        android:defaultValue="" />
 </restrictions>

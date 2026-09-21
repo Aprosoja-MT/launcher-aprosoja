@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.text.format.DateUtils
+import android.text.format.Formatter
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material3.Checkbox
@@ -83,6 +85,64 @@ fun UsageAuditPreferences(
     }
     val requestPermission = rememberAuditPermissionRequest { service.refresh() }
     val auditPermissions = remember { AuditPermission.required() }
+    val absentValue = stringResource(id = R.string.usage_audit_spec_absent)
+    val deviceRows = remember(uiState.specs, context, absentValue) {
+        val specs = uiState.specs
+        listOf(
+            DiagnosticRow(R.string.usage_audit_spec_app_version, specs.appVersion ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_spec_android_version, specs.androidVersion ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_spec_sdk_int, specs.sdkInt?.toString() ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_spec_security_patch, specs.securityPatch ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_spec_manufacturer, specs.manufacturer ?: absentValue),
+            DiagnosticRow(
+                R.string.usage_audit_spec_ram_total,
+                specs.ramTotalBytes?.let { Formatter.formatFileSize(context, it) } ?: absentValue,
+            ),
+            DiagnosticRow(
+                R.string.usage_audit_spec_storage_total,
+                specs.storageTotalBytes?.let { Formatter.formatFileSize(context, it) } ?: absentValue,
+            ),
+            DiagnosticRow(
+                R.string.usage_audit_spec_storage_free,
+                specs.storageFreeBytes?.let { Formatter.formatFileSize(context, it) } ?: absentValue,
+            ),
+            DiagnosticRow(R.string.usage_audit_spec_screen_resolution, specs.screenResolution ?: absentValue),
+            DiagnosticRow(
+                R.string.usage_audit_spec_battery_level,
+                specs.batteryLevel?.let { "$it%" } ?: absentValue,
+            ),
+            DiagnosticRow(
+                R.string.usage_audit_spec_battery_charging,
+                specs.batteryCharging?.let {
+                    context.getString(
+                        if (it) R.string.usage_audit_spec_yes else R.string.usage_audit_spec_no,
+                    )
+                } ?: absentValue,
+            ),
+            DiagnosticRow(R.string.usage_audit_spec_network_type, specs.networkType ?: absentValue),
+        )
+    }
+    val knoxRows = remember(uiState.knox, absentValue) {
+        val knox = uiState.knox
+        listOf(
+            DiagnosticRow(R.string.usage_audit_restriction_group_name_title, knox.groupName ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_restriction_site_title, knox.site ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_restriction_site_code_title, knox.siteCode ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_restriction_department_title, knox.department ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_restriction_device_tag_title, knox.deviceTag ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_restriction_user_tag_title, knox.userTag ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_restriction_display_name_title, knox.displayName ?: absentValue),
+            DiagnosticRow(
+                R.string.usage_audit_restriction_employee_number_title,
+                knox.employeeNumber ?: absentValue,
+            ),
+            DiagnosticRow(R.string.usage_audit_restriction_phone_number_title, knox.phoneNumber ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_restriction_imei_title, knox.imei ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_restriction_iccid_title, knox.iccid ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_restriction_carrier_title, knox.carrier ?: absentValue),
+            DiagnosticRow(R.string.usage_audit_restriction_device_name_title, knox.deviceName ?: absentValue),
+        )
+    }
     val pingModeText = when (uiState.pingMode) {
         PingMode.IDLE -> stringResource(id = R.string.usage_audit_ping_mode_idle)
         PingMode.MOVING -> stringResource(id = R.string.usage_audit_ping_mode_moving)
@@ -356,6 +416,28 @@ fun UsageAuditPreferences(
             }
         }
         preferenceGroupItems(
+            items = deviceRows,
+            isFirstChild = false,
+            heading = { stringResource(id = R.string.usage_audit_device_info) },
+            key = { _, row -> row.label.toString() },
+        ) { _, row ->
+            PreferenceTemplate(
+                title = { Text(stringResource(id = row.label)) },
+                description = { Text(row.value) },
+            )
+        }
+        preferenceGroupItems(
+            items = knoxRows,
+            isFirstChild = false,
+            heading = { stringResource(id = R.string.usage_audit_knox_info) },
+            key = { _, row -> row.label.toString() },
+        ) { _, row ->
+            PreferenceTemplate(
+                title = { Text(stringResource(id = row.label)) },
+                description = { Text(row.value) },
+            )
+        }
+        preferenceGroupItems(
             items = uniqueApps,
             isFirstChild = false,
             dividerStartIndent = 40.dp,
@@ -406,6 +488,11 @@ fun UsageAuditPreferences(
         }
     }
 }
+
+private data class DiagnosticRow(
+    @StringRes val label: Int,
+    val value: String,
+)
 
 private fun openPingOnMaps(context: Context, latitude: Double, longitude: Double) {
     val uri = Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude")

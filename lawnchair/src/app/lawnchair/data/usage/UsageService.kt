@@ -74,6 +74,8 @@ class UsageService(private val context: Context) : SafeCloseable {
             debugApiUrl = LauncherApiConfig.debugUrl(context),
             debugBootstrap = LauncherApiConfig.debugSecret(context),
             debugUsername = LauncherApiConfig.debugUsername(context),
+            knox = KnoxDeviceInfo.read(context),
+            specs = DeviceSpecs.read(context),
         )
     }
 

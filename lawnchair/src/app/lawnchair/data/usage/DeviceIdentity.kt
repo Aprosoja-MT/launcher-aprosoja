@@ -1,5 +1,6 @@
 package app.lawnchair.data.usage
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -9,4 +10,6 @@ data class DeviceIdentity(
     val tabletId: String,
     val model: String,
     val registeredAt: Long,
+    @Embedded val knox: KnoxProfile = KnoxProfile.Empty,
+    @Embedded val specs: DeviceSpecsSnapshot = DeviceSpecsSnapshot.Empty,
 )

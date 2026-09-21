@@ -13,14 +13,9 @@ object UsageCollector {
         WatchedPackages.sync(context, dao)
         val serial = DeviceSerial.resolve(context) ?: return false
         val existing = dao.getIdentity()
-        if (existing == null || existing.tabletId != serial) {
-            dao.upsertIdentity(
-                DeviceIdentity(
-                    tabletId = serial,
-                    model = Build.MODEL.orEmpty(),
-                    registeredAt = existing?.registeredAt ?: System.currentTimeMillis(),
-                ),
-            )
+        val next = buildIdentity(context, serial, existing)
+        if (existing != next) {
+            dao.upsertIdentity(next)
         }
         if (!UsagePermission.hasAccess(context)) return false
 
@@ -41,6 +36,20 @@ object UsageCollector {
         dao.pruneDeviceUsage(cutoff)
         dao.pruneAppUsage(cutoff)
         return true
+    }
+
+    private fun buildIdentity(
+        context: Context,
+        serial: String,
+        existing: DeviceIdentity?,
+    ): DeviceIdentity {
+        return DeviceIdentity(
+            tabletId = serial,
+            model = Build.MODEL.orEmpty(),
+            registeredAt = existing?.registeredAt ?: System.currentTimeMillis(),
+            knox = KnoxDeviceInfo.read(context),
+            specs = DeviceSpecs.read(context),
+        )
     }
 
     private suspend fun hasStaleAppUsage(

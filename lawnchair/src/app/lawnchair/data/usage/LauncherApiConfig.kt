@@ -1,7 +1,6 @@
 package app.lawnchair.data.usage
 
 import android.content.Context
-import android.content.RestrictionsManager
 import com.android.launcher3.BuildConfig
 
 object LauncherApiConfig {
@@ -81,10 +80,7 @@ object LauncherApiConfig {
     }
 
     private fun fromRestrictions(context: Context, key: String): String? {
-        val restrictions = context.getSystemService(RestrictionsManager::class.java)
-            ?.applicationRestrictions
-            ?: return null
-        return restrictions.getString(key)?.trim()?.takeIf { it.isNotEmpty() }
+        return Restrictions.string(context, key)
     }
 
     private fun normalizeUrl(raw: String?): String? {

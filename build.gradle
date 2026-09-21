@@ -173,6 +173,7 @@ android {
     namespace "com.android.launcher3"
     defaultConfig {
         applicationId "br.com.aprosoja.launcher"
+        minSdk 26
         versionCode appVersionCode
         versionName releaseVersionName
         buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${releaseVersionName}\""

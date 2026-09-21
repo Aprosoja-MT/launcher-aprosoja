@@ -216,6 +216,50 @@
     <string name="usage_audit_restriction_api_secret_description">O mesmo valor de LauncherAuth:BootstrapSecret na API</string>
     <string name="usage_audit_restriction_username_title">Usuário</string>
     <string name="usage_audit_restriction_username_description" formatted="false">Lookup do Knox Manage: ${UserName}</string>
+    <string name="usage_audit_restriction_group_name_title">Grupo do Knox</string>
+    <string name="usage_audit_restriction_group_name_description" formatted="false">Lookup do Knox Manage: ${GroupName}</string>
+    <string name="usage_audit_restriction_site_title">Local de trabalho</string>
+    <string name="usage_audit_restriction_site_description" formatted="false">Lookup do Knox Manage: ${Site}</string>
+    <string name="usage_audit_restriction_site_code_title">Código do local</string>
+    <string name="usage_audit_restriction_site_code_description" formatted="false">Lookup do Knox Manage: ${SiteCode}</string>
+    <string name="usage_audit_restriction_department_title">Departamento</string>
+    <string name="usage_audit_restriction_department_description" formatted="false">Lookup do Knox Manage: ${Department}</string>
+    <string name="usage_audit_restriction_device_tag_title">Tag do dispositivo</string>
+    <string name="usage_audit_restriction_device_tag_description" formatted="false">Lookup do Knox Manage: ${KM_DeviceTag}</string>
+    <string name="usage_audit_restriction_user_tag_title">Tag do usuário</string>
+    <string name="usage_audit_restriction_user_tag_description" formatted="false">Lookup do Knox Manage: ${KM_UserTag}</string>
+    <string name="usage_audit_restriction_display_name_title">Responsável</string>
+    <string name="usage_audit_restriction_display_name_description" formatted="false">Lookup do Knox Manage: ${DisplayName}</string>
+    <string name="usage_audit_restriction_employee_number_title">Matrícula</string>
+    <string name="usage_audit_restriction_employee_number_description" formatted="false">Lookup do Knox Manage: ${EmployeeNumber}</string>
+    <string name="usage_audit_restriction_phone_number_title">Telefone</string>
+    <string name="usage_audit_restriction_phone_number_description" formatted="false">Lookup do Knox Manage: ${PhoneNumber}</string>
+    <string name="usage_audit_restriction_imei_title">IMEI</string>
+    <string name="usage_audit_restriction_imei_description" formatted="false">Lookup do Knox Manage: ${DeviceIMEI}</string>
+    <string name="usage_audit_restriction_iccid_title">ICCID</string>
+    <string name="usage_audit_restriction_iccid_description" formatted="false">Lookup do Knox Manage: ${ICCID}</string>
+    <string name="usage_audit_restriction_carrier_title">Operadora</string>
+    <string name="usage_audit_restriction_carrier_description" formatted="false">Lookup do Knox Manage: ${CurrentMncName}</string>
+    <string name="usage_audit_restriction_device_name_title">Nome do dispositivo</string>
+    <string name="usage_audit_restriction_device_name_description" formatted="false">Lookup do Knox Manage: ${MobileID}</string>
+    <string name="usage_audit_device_info">Informações do dispositivo</string>
+    <string name="usage_audit_knox_info">Cadastro no Knox</string>
+    <string name="usage_audit_value_unknown">Indisponível</string>
+    <string name="usage_audit_spec_app_version">Versão do app</string>
+    <string name="usage_audit_spec_android_version">Versão do Android</string>
+    <string name="usage_audit_spec_sdk_int">Nível da SDK</string>
+    <string name="usage_audit_spec_security_patch">Patch de segurança</string>
+    <string name="usage_audit_spec_manufacturer">Fabricante</string>
+    <string name="usage_audit_spec_ram_total">RAM total</string>
+    <string name="usage_audit_spec_storage_total">Armazenamento total</string>
+    <string name="usage_audit_spec_storage_free">Armazenamento livre</string>
+    <string name="usage_audit_spec_screen_resolution">Resolução da tela</string>
+    <string name="usage_audit_spec_battery_level">Nível da bateria</string>
+    <string name="usage_audit_spec_battery_charging">Carregando</string>
+    <string name="usage_audit_spec_network_type">Rede</string>
+    <string name="usage_audit_spec_yes">Sim</string>
+    <string name="usage_audit_spec_no">Não</string>
+    <string name="usage_audit_spec_absent">Não informado</string>
     <string name="app_info_drop_target_label">Informações do app</string>
     <string name="debug_restart_launcher">Reiniciar o Apro Launcher</string>
     <string name="experimental_features_label">Recursos experimentais</string>

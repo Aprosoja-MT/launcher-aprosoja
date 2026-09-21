@@ -259,6 +259,50 @@
     <string name="usage_audit_restriction_api_secret_description">Same value as LauncherAuth:BootstrapSecret on the API</string>
     <string name="usage_audit_restriction_username_title">Username</string>
     <string name="usage_audit_restriction_username_description" formatted="false">Knox Manage lookup: ${UserName}</string>
+    <string name="usage_audit_restriction_group_name_title">Knox group</string>
+    <string name="usage_audit_restriction_group_name_description" formatted="false">Knox Manage lookup: ${GroupName}</string>
+    <string name="usage_audit_restriction_site_title">Site</string>
+    <string name="usage_audit_restriction_site_description" formatted="false">Knox Manage lookup: ${Site}</string>
+    <string name="usage_audit_restriction_site_code_title">Site code</string>
+    <string name="usage_audit_restriction_site_code_description" formatted="false">Knox Manage lookup: ${SiteCode}</string>
+    <string name="usage_audit_restriction_department_title">Department</string>
+    <string name="usage_audit_restriction_department_description" formatted="false">Knox Manage lookup: ${Department}</string>
+    <string name="usage_audit_restriction_device_tag_title">Device tag</string>
+    <string name="usage_audit_restriction_device_tag_description" formatted="false">Knox Manage lookup: ${KM_DeviceTag}</string>
+    <string name="usage_audit_restriction_user_tag_title">User tag</string>
+    <string name="usage_audit_restriction_user_tag_description" formatted="false">Knox Manage lookup: ${KM_UserTag}</string>
+    <string name="usage_audit_restriction_display_name_title">Responsible</string>
+    <string name="usage_audit_restriction_display_name_description" formatted="false">Knox Manage lookup: ${DisplayName}</string>
+    <string name="usage_audit_restriction_employee_number_title">Employee number</string>
+    <string name="usage_audit_restriction_employee_number_description" formatted="false">Knox Manage lookup: ${EmployeeNumber}</string>
+    <string name="usage_audit_restriction_phone_number_title">Phone number</string>
+    <string name="usage_audit_restriction_phone_number_description" formatted="false">Knox Manage lookup: ${PhoneNumber}</string>
+    <string name="usage_audit_restriction_imei_title">IMEI</string>
+    <string name="usage_audit_restriction_imei_description" formatted="false">Knox Manage lookup: ${DeviceIMEI}</string>
+    <string name="usage_audit_restriction_iccid_title">ICCID</string>
+    <string name="usage_audit_restriction_iccid_description" formatted="false">Knox Manage lookup: ${ICCID}</string>
+    <string name="usage_audit_restriction_carrier_title">Carrier</string>
+    <string name="usage_audit_restriction_carrier_description" formatted="false">Knox Manage lookup: ${CurrentMncName}</string>
+    <string name="usage_audit_restriction_device_name_title">Device name</string>
+    <string name="usage_audit_restriction_device_name_description" formatted="false">Knox Manage lookup: ${MobileID}</string>
+    <string name="usage_audit_device_info">Device information</string>
+    <string name="usage_audit_knox_info">Knox device record</string>
+    <string name="usage_audit_value_unknown">Unavailable</string>
+    <string name="usage_audit_spec_app_version">App version</string>
+    <string name="usage_audit_spec_android_version">Android version</string>
+    <string name="usage_audit_spec_sdk_int">SDK level</string>
+    <string name="usage_audit_spec_security_patch">Security patch</string>
+    <string name="usage_audit_spec_manufacturer">Manufacturer</string>
+    <string name="usage_audit_spec_ram_total">Total RAM</string>
+    <string name="usage_audit_spec_storage_total">Total storage</string>
+    <string name="usage_audit_spec_storage_free">Free storage</string>
+    <string name="usage_audit_spec_screen_resolution">Screen resolution</string>
+    <string name="usage_audit_spec_battery_level">Battery level</string>
+    <string name="usage_audit_spec_battery_charging">Charging</string>
+    <string name="usage_audit_spec_network_type">Network</string>
+    <string name="usage_audit_spec_yes">Yes</string>
+    <string name="usage_audit_spec_no">No</string>
+    <string name="usage_audit_spec_absent">Not reported</string>
 
     <string name="app_info_drop_target_label">App info</string>
     <string name="debug_restart_launcher">Restart Apro Launcher</string>
