@@ -89,23 +89,24 @@ object LauncherSyncClient {
         var pingAfter = store.lastSyncedPingId()
         var retriedAuth = false
         val labels = dao.getWatched().associate { it.packageName to it.label }
+        val identityHash = identity.hashCode()
 
         repeat(MAX_BATCHES) {
             val deviceUsages = dao.getPendingDeviceUsages(DEVICE_USAGE_BATCH)
             val appUsages = dao.getPendingAppUsages(APP_USAGE_BATCH)
             val pings = dao.getPingsAfterId(pingAfter, PING_BATCH)
-            if (deviceUsages.isEmpty() && appUsages.isEmpty() && pings.isEmpty()) {
+            if (deviceUsages.isEmpty() &&
+                appUsages.isEmpty() &&
+                pings.isEmpty() &&
+                store.syncedIdentityHash() == identityHash
+            ) {
                 store.markSynced(pingAfter)
                 return true
             }
 
             val body = LauncherSyncRequest(
                 tabletId = serial,
-                device = LauncherDeviceSnapshot(
-                    model = identity.model,
-                    username = username,
-                    registeredAt = identity.registeredAt,
-                ),
+                device = deviceSnapshot(identity, username),
                 deviceUsages = deviceUsages.map {
                     LauncherDeviceUsageDto(date = it.date, screenOnMs = it.screenOnMs)
                 },
@@ -147,6 +148,7 @@ object LauncherSyncClient {
                 }
             }
 
+            store.markIdentitySynced(identityHash)
             deviceUsages.forEach { dao.markDeviceUsageSynced(it.date, it.updatedAt) }
             appUsages.forEach { dao.markAppUsageSynced(it.date, it.packageName, it.updatedAt) }
             if (pings.isNotEmpty()) {
@@ -161,6 +163,41 @@ object LauncherSyncClient {
             }
         }
         return true
+    }
+
+    private fun deviceSnapshot(identity: DeviceIdentity, username: String): LauncherDeviceSnapshot {
+        val knox = identity.knox
+        val specs = identity.specs
+        return LauncherDeviceSnapshot(
+            model = identity.model,
+            username = username,
+            registeredAt = identity.registeredAt,
+            groupName = knox.groupName,
+            site = knox.site,
+            siteCode = knox.siteCode,
+            department = knox.department,
+            deviceTag = knox.deviceTag,
+            userTag = knox.userTag,
+            displayName = knox.displayName,
+            employeeNumber = knox.employeeNumber,
+            phoneNumber = knox.phoneNumber,
+            imei = knox.imei,
+            iccid = knox.iccid,
+            carrier = knox.carrier,
+            deviceName = knox.deviceName,
+            appVersion = specs.appVersion,
+            androidVersion = specs.androidVersion,
+            sdkInt = specs.sdkInt,
+            securityPatch = specs.securityPatch,
+            manufacturer = specs.manufacturer,
+            ramTotalBytes = specs.ramTotalBytes,
+            storageTotalBytes = specs.storageTotalBytes,
+            screenResolution = specs.screenResolution,
+            batteryLevel = specs.batteryLevel,
+            batteryCharging = specs.batteryCharging,
+            storageFreeBytes = specs.storageFreeBytes,
+            networkType = specs.networkType,
+        )
     }
 
     private fun pingClientId(tabletId: String, localId: Long): String {

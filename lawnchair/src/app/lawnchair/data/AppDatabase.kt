@@ -35,7 +35,7 @@ import kotlinx.coroutines.runBlocking
         DailyAppUsage::class,
         LocationPing::class,
     ],
-    version = 7,
+    version = 8,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -247,6 +247,36 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `groupName` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `site` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `siteCode` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `department` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `deviceTag` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `userTag` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `displayName` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `employeeNumber` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `phoneNumber` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `imei` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `iccid` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `carrier` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `deviceName` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `appVersion` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `androidVersion` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `sdkInt` INTEGER")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `securityPatch` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `manufacturer` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `ramTotalBytes` INTEGER")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `storageTotalBytes` INTEGER")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `screenResolution` TEXT")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `batteryLevel` INTEGER")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `batteryCharging` INTEGER")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `storageFreeBytes` INTEGER")
+                database.execSQL("ALTER TABLE `device_identity` ADD COLUMN `networkType` TEXT")
+            }
+        }
+
         val INSTANCE = MainThreadInitializedObject { context ->
             Room.databaseBuilder(
                 context,
@@ -258,6 +288,7 @@ abstract class AppDatabase : RoomDatabase() {
                 .addMigrations(MIGRATION_4_5)
                 .addMigrations(MIGRATION_5_6)
                 .addMigrations(MIGRATION_6_7)
+                .addMigrations(MIGRATION_7_8)
                 .build()
         }
     }

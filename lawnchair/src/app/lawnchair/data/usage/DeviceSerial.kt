@@ -1,7 +1,6 @@
 package app.lawnchair.data.usage
 
 import android.content.Context
-import android.content.RestrictionsManager
 import com.android.launcher3.BuildConfig
 
 enum class SerialSource {
@@ -51,10 +50,7 @@ object DeviceSerial {
     }
 
     private fun fromRestrictions(context: Context): String? {
-        val restrictions = context.getSystemService(RestrictionsManager::class.java)
-            ?.applicationRestrictions
-            ?: return null
-        return restrictions.getString(RESTRICTION_KEY)?.takeIf { isValid(it) }
+        return Restrictions.string(context, RESTRICTION_KEY)?.takeIf { isValid(it) }
     }
 
     private fun fromDebugOverride(context: Context): String? {

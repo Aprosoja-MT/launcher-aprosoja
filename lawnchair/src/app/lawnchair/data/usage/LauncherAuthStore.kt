@@ -15,6 +15,14 @@ class LauncherAuthStore(context: Context) {
 
     fun lastError(): String? = prefs.getString(LAST_ERROR, null)?.takeIf { it.isNotBlank() }
 
+    fun syncedIdentityHash(): Int = prefs.getInt(IDENTITY_HASH, 0)
+
+    fun markIdentitySynced(hash: Int) {
+        prefs.edit()
+            .putInt(IDENTITY_HASH, hash)
+            .apply()
+    }
+
     fun saveError(message: String) {
         prefs.edit()
             .putString(LAST_ERROR, message)
@@ -55,5 +63,6 @@ class LauncherAuthStore(context: Context) {
         private const val LAST_PING_ID = "launcher_last_ping_id"
         private const val LAST_SYNC_AT = "launcher_last_sync_at"
         private const val LAST_ERROR = "launcher_last_error"
+        private const val IDENTITY_HASH = "launcher_synced_identity_hash"
     }
 }

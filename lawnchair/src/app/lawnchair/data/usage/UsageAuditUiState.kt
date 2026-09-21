@@ -21,6 +21,8 @@ data class UsageAuditUiState(
     val debugApiUrl: String,
     val debugBootstrap: String,
     val debugUsername: String,
+    val knox: KnoxProfile = KnoxProfile.Empty,
+    val specs: DeviceSpecsSnapshot = DeviceSpecsSnapshot.Empty,
 ) {
     fun isGranted(permission: AuditPermission): Boolean = permission in grantedPermissions
 
@@ -46,6 +48,8 @@ data class UsageAuditUiState(
             debugApiUrl = "",
             debugBootstrap = "",
             debugUsername = "",
+            knox = KnoxProfile.Empty,
+            specs = DeviceSpecsSnapshot.Empty,
         )
     }
 }
