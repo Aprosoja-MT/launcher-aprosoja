@@ -147,6 +147,9 @@ versionProperties.load(new StringReader(versionFileText))
 final def appVersionName = providers.gradleProperty("appVersionName")
     .getOrElse(versionProperties.getProperty("versionName")).trim()
 final def appVersionBuild = providers.gradleProperty("appVersionBuild").getOrElse("0").trim().toInteger()
+final def keepApplicationId = providers.gradleProperty("appKeepApplicationId")
+    .map { it == "true" }
+    .getOrElse(false)
 
 if (!(appVersionName ==~ /\d+\.\d+\.\d+/)) {
     throw new GradleException("versionName invalido: '${appVersionName}' (esperado MAJOR.MINOR.PATCH)")
@@ -250,7 +253,9 @@ android {
         }
 
         debug {
-            applicationIdSuffix ".debug"
+            if (!keepApplicationId) {
+                applicationIdSuffix ".debug"
+            }
             resValue("string", "derived_app_name", "Apro Launcher (Debug)")
             buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${devVersionName}\""
         }
