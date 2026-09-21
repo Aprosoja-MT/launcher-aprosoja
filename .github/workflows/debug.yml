@@ -63,8 +63,8 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > keystore.properties
 
-      - name: Gerar APK assinado
-        run: ./gradlew assembleLawnWithQuickstepRelease -PappVersionBuild=${{ steps.version.outputs.build }}
+      - name: Gerar APK de debug
+        run: ./gradlew assembleLawnWithQuickstepDebug -PappVersionBuild=${{ steps.version.outputs.build }} -PappKeepApplicationId=true
 
       - name: Remover credenciais de assinatura
         if: always()
@@ -73,6 +73,6 @@ jobs:
       - uses: actions/upload-artifact@v6
         with:
           name: aprolauncher-debug
-          path: build/outputs/apk/lawnWithQuickstep/release/*.apk
+          path: build/outputs/apk/lawnWithQuickstep/debug/*.apk
           if-no-files-found: error
           retention-days: 14
