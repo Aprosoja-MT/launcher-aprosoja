@@ -1,0 +1,27 @@
+# Dependencies and build
+build/
+.gradle/
+bin/
+
+# Image assets / license dump — no architectural value
+assets/
+res/drawable/
+res/drawable-nodpi/
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.ico
+
+# Credentials
+local.properties
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.pem
+
+*.log
+.DS_Store
