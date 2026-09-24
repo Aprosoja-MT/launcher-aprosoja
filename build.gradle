@@ -188,6 +188,12 @@ android {
     }
 
     applicationVariants.configureEach { variant ->
+        def expectedId = variant.buildType.name == "debug"
+            ? "br.com.aprosoja.launcher.debug"
+            : "br.com.aprosoja.launcher"
+        if (variant.applicationId != expectedId) {
+            throw new GradleException("applicationId deve ser ${expectedId} (foi '${variant.applicationId}')")
+        }
         def variantVersionName = variant.buildType.name == "debug" ? devVersionName : releaseVersionName
         variant.outputs.configureEach {
             outputFileName = "AproLauncher-${variantVersionName}-${variant.buildType.name}.apk"

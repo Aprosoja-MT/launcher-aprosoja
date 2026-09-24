@@ -19,6 +19,20 @@ jobs:
         with:
           submodules: true
 
+      - name: Validar segredos de assinatura
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          for secret in KEYSTORE KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!secret}" ]; then
+              echo "::error::Segredo $secret nao configurado no repositorio (ver docs/release.md)"
+              exit 1
+            fi
+          done
+
       - name: Definir versionCode de rebuild
         id: version
         env:
@@ -34,8 +48,44 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v5
 
+      - name: Configurar assinatura
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/keystore.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/keystore.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > keystore.properties
+
       - name: Gerar APK de debug
         run: ./gradlew assembleLawnWithQuickstepDebug -PappVersionBuild=${{ steps.version.outputs.build }}
+
+      - name: Conferir applicationId
+        run: |
+          python3 - <<'PY'
+          import json, glob, sys
+          files = glob.glob("build/outputs/apk/lawnWithQuickstep/debug/output-metadata.json")
+          if not files:
+              print("::error::output-metadata.json nao encontrado")
+              sys.exit(1)
+          data = json.loads(open(files[0], encoding="utf-8").read())
+          expected = "br.com.aprosoja.launcher.debug"
+          got = data.get("applicationId")
+          print(f"applicationId={got}")
+          if got != expected:
+              print(f"::error::applicationId '{got}' != '{expected}'")
+              sys.exit(1)
+          PY
+
+      - name: Remover credenciais de assinatura
+        if: always()
+        run: rm -f keystore.properties "$RUNNER_TEMP/keystore.jks"
 
       - uses: actions/upload-artifact@v6
         with:
