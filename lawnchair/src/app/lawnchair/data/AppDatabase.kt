@@ -35,7 +35,7 @@ import kotlinx.coroutines.runBlocking
         DailyAppUsage::class,
         LocationPing::class,
     ],
-    version = 8,
+    version = 10,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -277,6 +277,125 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `device_identity_new` (
+                        `id` INTEGER NOT NULL,
+                        `tabletId` TEXT NOT NULL,
+                        `model` TEXT NOT NULL,
+                        `registeredAt` INTEGER NOT NULL,
+                        `groupName` TEXT,
+                        `deviceTag` TEXT,
+                        `userTag` TEXT,
+                        `displayName` TEXT,
+                        `employeeNumber` TEXT,
+                        `phoneNumber` TEXT,
+                        `imei` TEXT,
+                        `iccid` TEXT,
+                        `carrier` TEXT,
+                        `deviceName` TEXT,
+                        `appVersion` TEXT,
+                        `androidVersion` TEXT,
+                        `sdkInt` INTEGER,
+                        `securityPatch` TEXT,
+                        `manufacturer` TEXT,
+                        `ramTotalBytes` INTEGER,
+                        `storageTotalBytes` INTEGER,
+                        `screenResolution` TEXT,
+                        `batteryLevel` INTEGER,
+                        `batteryCharging` INTEGER,
+                        `storageFreeBytes` INTEGER,
+                        `networkType` TEXT,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                database.execSQL(
+                    """
+                    INSERT INTO `device_identity_new` (
+                        `id`, `tabletId`, `model`, `registeredAt`,
+                        `groupName`, `deviceTag`, `userTag`, `displayName`, `employeeNumber`,
+                        `phoneNumber`, `imei`, `iccid`, `carrier`, `deviceName`,
+                        `appVersion`, `androidVersion`, `sdkInt`, `securityPatch`, `manufacturer`,
+                        `ramTotalBytes`, `storageTotalBytes`, `screenResolution`,
+                        `batteryLevel`, `batteryCharging`, `storageFreeBytes`, `networkType`
+                    )
+                    SELECT
+                        `id`, `tabletId`, `model`, `registeredAt`,
+                        `groupName`, `deviceTag`, `userTag`, `displayName`, `employeeNumber`,
+                        `phoneNumber`, `imei`, `iccid`, `carrier`, `deviceName`,
+                        `appVersion`, `androidVersion`, `sdkInt`, `securityPatch`, `manufacturer`,
+                        `ramTotalBytes`, `storageTotalBytes`, `screenResolution`,
+                        `batteryLevel`, `batteryCharging`, `storageFreeBytes`, `networkType`
+                    FROM `device_identity`
+                    """.trimIndent(),
+                )
+                database.execSQL("DROP TABLE `device_identity`")
+                database.execSQL("ALTER TABLE `device_identity_new` RENAME TO `device_identity`")
+            }
+        }
+
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `device_identity_new` (
+                        `id` INTEGER NOT NULL,
+                        `tabletId` TEXT NOT NULL,
+                        `model` TEXT NOT NULL,
+                        `registeredAt` INTEGER NOT NULL,
+                        `groupName` TEXT,
+                        `deviceTag` TEXT,
+                        `userTag` TEXT,
+                        `employeeNumber` TEXT,
+                        `phoneNumber` TEXT,
+                        `imei` TEXT,
+                        `iccid` TEXT,
+                        `carrier` TEXT,
+                        `deviceName` TEXT,
+                        `appVersion` TEXT,
+                        `androidVersion` TEXT,
+                        `sdkInt` INTEGER,
+                        `securityPatch` TEXT,
+                        `manufacturer` TEXT,
+                        `ramTotalBytes` INTEGER,
+                        `storageTotalBytes` INTEGER,
+                        `screenResolution` TEXT,
+                        `batteryLevel` INTEGER,
+                        `batteryCharging` INTEGER,
+                        `storageFreeBytes` INTEGER,
+                        `networkType` TEXT,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                database.execSQL(
+                    """
+                    INSERT INTO `device_identity_new` (
+                        `id`, `tabletId`, `model`, `registeredAt`,
+                        `groupName`, `deviceTag`, `userTag`, `employeeNumber`,
+                        `phoneNumber`, `imei`, `iccid`, `carrier`, `deviceName`,
+                        `appVersion`, `androidVersion`, `sdkInt`, `securityPatch`, `manufacturer`,
+                        `ramTotalBytes`, `storageTotalBytes`, `screenResolution`,
+                        `batteryLevel`, `batteryCharging`, `storageFreeBytes`, `networkType`
+                    )
+                    SELECT
+                        `id`, `tabletId`, `model`, `registeredAt`,
+                        `groupName`, `deviceTag`, `userTag`, `employeeNumber`,
+                        `phoneNumber`, `imei`, `iccid`, `carrier`, `deviceName`,
+                        `appVersion`, `androidVersion`, `sdkInt`, `securityPatch`, `manufacturer`,
+                        `ramTotalBytes`, `storageTotalBytes`, `screenResolution`,
+                        `batteryLevel`, `batteryCharging`, `storageFreeBytes`, `networkType`
+                    FROM `device_identity`
+                    """.trimIndent(),
+                )
+                database.execSQL("DROP TABLE `device_identity`")
+                database.execSQL("ALTER TABLE `device_identity_new` RENAME TO `device_identity`")
+            }
+        }
+
         val INSTANCE = MainThreadInitializedObject { context ->
             Room.databaseBuilder(
                 context,
@@ -289,6 +408,8 @@ abstract class AppDatabase : RoomDatabase() {
                 .addMigrations(MIGRATION_5_6)
                 .addMigrations(MIGRATION_6_7)
                 .addMigrations(MIGRATION_7_8)
+                .addMigrations(MIGRATION_8_9)
+                .addMigrations(MIGRATION_9_10)
                 .build()
         }
     }

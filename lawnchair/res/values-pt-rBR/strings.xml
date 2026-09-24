@@ -218,18 +218,10 @@
     <string name="usage_audit_restriction_username_description" formatted="false">Lookup do Knox Manage: ${UserName}</string>
     <string name="usage_audit_restriction_group_name_title">Grupo do Knox</string>
     <string name="usage_audit_restriction_group_name_description" formatted="false">Lookup do Knox Manage: ${GroupName}</string>
-    <string name="usage_audit_restriction_site_title">Local de trabalho</string>
-    <string name="usage_audit_restriction_site_description" formatted="false">Lookup do Knox Manage: ${Site}</string>
-    <string name="usage_audit_restriction_site_code_title">Código do local</string>
-    <string name="usage_audit_restriction_site_code_description" formatted="false">Lookup do Knox Manage: ${SiteCode}</string>
-    <string name="usage_audit_restriction_department_title">Departamento</string>
-    <string name="usage_audit_restriction_department_description" formatted="false">Lookup do Knox Manage: ${Department}</string>
     <string name="usage_audit_restriction_device_tag_title">Tag do dispositivo</string>
     <string name="usage_audit_restriction_device_tag_description" formatted="false">Lookup do Knox Manage: ${KM_DeviceTag}</string>
     <string name="usage_audit_restriction_user_tag_title">Tag do usuário</string>
     <string name="usage_audit_restriction_user_tag_description" formatted="false">Lookup do Knox Manage: ${KM_UserTag}</string>
-    <string name="usage_audit_restriction_display_name_title">Responsável</string>
-    <string name="usage_audit_restriction_display_name_description" formatted="false">Lookup do Knox Manage: ${DisplayName}</string>
     <string name="usage_audit_restriction_employee_number_title">Matrícula</string>
     <string name="usage_audit_restriction_employee_number_description" formatted="false">Lookup do Knox Manage: ${EmployeeNumber}</string>
     <string name="usage_audit_restriction_phone_number_title">Telefone</string>

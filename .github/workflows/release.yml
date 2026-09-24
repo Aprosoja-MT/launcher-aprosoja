@@ -30,8 +30,8 @@ jobs:
         env:
           BRANCH: ${{ github.ref_name }}
         run: |
-          if [ "$BRANCH" != "aprolauncher-prod" ]; then
-            echo "::error::Release so pode ser publicada a partir de aprolauncher-prod (branch selecionada: $BRANCH)"
+          if [ "$BRANCH" != "aprolauncher-dev" ]; then
+            echo "::error::Release so pode ser publicada a partir de aprolauncher-dev (branch selecionada: $BRANCH)"
             exit 1
           fi
 

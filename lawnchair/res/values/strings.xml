@@ -261,18 +261,10 @@
     <string name="usage_audit_restriction_username_description" formatted="false">Knox Manage lookup: ${UserName}</string>
     <string name="usage_audit_restriction_group_name_title">Knox group</string>
     <string name="usage_audit_restriction_group_name_description" formatted="false">Knox Manage lookup: ${GroupName}</string>
-    <string name="usage_audit_restriction_site_title">Site</string>
-    <string name="usage_audit_restriction_site_description" formatted="false">Knox Manage lookup: ${Site}</string>
-    <string name="usage_audit_restriction_site_code_title">Site code</string>
-    <string name="usage_audit_restriction_site_code_description" formatted="false">Knox Manage lookup: ${SiteCode}</string>
-    <string name="usage_audit_restriction_department_title">Department</string>
-    <string name="usage_audit_restriction_department_description" formatted="false">Knox Manage lookup: ${Department}</string>
     <string name="usage_audit_restriction_device_tag_title">Device tag</string>
     <string name="usage_audit_restriction_device_tag_description" formatted="false">Knox Manage lookup: ${KM_DeviceTag}</string>
     <string name="usage_audit_restriction_user_tag_title">User tag</string>
     <string name="usage_audit_restriction_user_tag_description" formatted="false">Knox Manage lookup: ${KM_UserTag}</string>
-    <string name="usage_audit_restriction_display_name_title">Responsible</string>
-    <string name="usage_audit_restriction_display_name_description" formatted="false">Knox Manage lookup: ${DisplayName}</string>
     <string name="usage_audit_restriction_employee_number_title">Employee number</string>
     <string name="usage_audit_restriction_employee_number_description" formatted="false">Knox Manage lookup: ${EmployeeNumber}</string>
     <string name="usage_audit_restriction_phone_number_title">Phone number</string>

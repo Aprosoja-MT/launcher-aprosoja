@@ -126,12 +126,8 @@ fun UsageAuditPreferences(
         val knox = uiState.knox
         listOf(
             DiagnosticRow(R.string.usage_audit_restriction_group_name_title, knox.groupName ?: absentValue),
-            DiagnosticRow(R.string.usage_audit_restriction_site_title, knox.site ?: absentValue),
-            DiagnosticRow(R.string.usage_audit_restriction_site_code_title, knox.siteCode ?: absentValue),
-            DiagnosticRow(R.string.usage_audit_restriction_department_title, knox.department ?: absentValue),
             DiagnosticRow(R.string.usage_audit_restriction_device_tag_title, knox.deviceTag ?: absentValue),
             DiagnosticRow(R.string.usage_audit_restriction_user_tag_title, knox.userTag ?: absentValue),
-            DiagnosticRow(R.string.usage_audit_restriction_display_name_title, knox.displayName ?: absentValue),
             DiagnosticRow(
                 R.string.usage_audit_restriction_employee_number_title,
                 knox.employeeNumber ?: absentValue,
